@@ -31,10 +31,10 @@ import serial
 #         return msg
 
 def sockwrite(msg):
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect(('localhost', 9999))
-    s.send(msg)
-    s.close()
+	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	s.connect(('localhost', 9999))
+	s.send(msg)
+	s.close()
 
 def serialwrite(msg):
 	s = serial.Serial('/dev/ttyACM0', 9600, timeout=5)
