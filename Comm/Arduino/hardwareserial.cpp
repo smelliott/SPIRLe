@@ -1,20 +1,6 @@
-#include <Boards.h>
-#include <EEPROM.h>
-#include <SD.h>
-#include <Wire.h>
-#include <SPI.h>
-#include <SoftwareSerial.h>
-#include <Dns.h>
-#include <EthernetUdp.h>
-#include <EthernetServer.h>
-#include <EthernetClient.h>
-#include <Dhcp.h>
-#include <util.h>
-#include <Ethernet.h>
+#include "hardwareserial.h"
+#include <HardwareSerial.h>
 #include "Arduino.h"
-#include <string>
-#include <cstring>
-#include <ctime>
 
 #define ms() (clock() / CLOCKS_PER_SEC) * 1000
 
@@ -64,7 +50,7 @@ namespace SPIRLe {
 			return write(str);
 		}
 
-		std::string read(int len = 0) {
+		std::string read(int len) {
 			int av = available();
 			if(av == 0) {
 				return "";
@@ -75,7 +61,7 @@ namespace SPIRLe {
 			return std::string(Serial.readBytes(len));
 		}
 
-		bool poll_read(int timeout = 0) {
+		bool poll_read(int timeout) {
 			//have to implement own timeout on arduino
 			clock_t end = ms() + timeout;
 			while(ms() < end) {
@@ -86,7 +72,7 @@ namespace SPIRLe {
 			return false;
 		}
 
-		bool poll_write(int timeout = 0) {
+		bool poll_write(int timeout) {
 			//can't poll serial writes on arduino
 			return true;
 		}
