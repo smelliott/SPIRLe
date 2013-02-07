@@ -64,6 +64,6 @@ build:
 	avrdude $(AVRD_OPTS)
 
 clean:
-	-rm -f *.o *.hex *.eep core.a
+	-rm -f *.o *.hex *.eep *.elf core.a
 
 rebuild: clean build
