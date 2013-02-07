@@ -1,7 +1,7 @@
 #ifndef _INTERFACE_H
 #define _INTERFACE_H
 
-#include <string>
+#include <string.h>
 
 namespace SPIRLe {
 
