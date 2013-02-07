@@ -1,8 +1,8 @@
-import library
+import lib
 
 
 def main():
-    library.flashLed("1")
+    lib.setGpioPin(0, 1)
 
 
 if __name__ == "__main__":

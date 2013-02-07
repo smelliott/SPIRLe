@@ -1,5 +1,6 @@
 #include "string.h"
 #include "hardserial.h"
+#include "pin.h"
 #include "Arduino.h"
 
 enum Instruction {
@@ -27,6 +28,7 @@ int main() {
 	SPIRLe::HardwareSerialCommProvider p(9600);
 	p.open();
 	string o;
+	string inst = "";
 	while(true) {
 		p.read(o);
 		// char inst = o[0];
@@ -36,7 +38,18 @@ int main() {
 		// 	DigitalPin.get();
 		// }
 		if(o.size() > 0) {
-			p.write(o);
+			inst += o;
+		}
+		if(inst.size() > 6) {
+			if((Instruction)inst[0] == GPIO_SET) {
+				p.write(inst);
+				DigitalPin::set(inst[5], inst[6]);
+			}
+			else if((Instruction)inst[0] == GPIO_GET) {
+				DigitalPin::get(inst[5]);
+				//write out
+			}
+			inst = "";
 		}
 	}
 	p.close();
