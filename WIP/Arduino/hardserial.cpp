@@ -47,20 +47,18 @@ namespace SPIRLe {
 		return write(str);
 	}
 
-	void HardwareSerialCommProvider::read(string& out, int len) {
+	char* HardwareSerialCommProvider::read(int len) {
 		int av = available();
 		if(av == 0) {
-			out = "";
-			return;
+			return null;
 		}
 		if(len == 0) {
 			len = av;
 		}
-		char* cstr = (char*)malloc(len);
-		Serial.readBytes(cstr, len);
-		out = string(cstr);
-		free(cstr);
-		return;
+		char* cstr = (char*)malloc(len + 1);
+		size_t got = Serial.readBytes(cstr, len);
+		cstr[got] = 0;
+		return cstr;
 	}
 
 	bool HardwareSerialCommProvider::poll_read(int timeout) {

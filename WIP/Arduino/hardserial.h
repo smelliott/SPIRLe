@@ -17,7 +17,7 @@ namespace SPIRLe {
 		int available();
 		bool write(const string& s);
 		bool write(const char* s);
-		void read(string& out, int len = 0);
+		char* read(int len = 0);
 		bool poll_read(int timeout = 0);
 		bool poll_write(int timeout = 0);
 	};

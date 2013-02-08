@@ -13,9 +13,10 @@ public:
 		if(v == 1) {
 			digitalWrite(pin, HIGH);
 		}
-		else {
+		else if(v == 0) {
 			digitalWrite(pin, LOW);
 		}
+		//epic fail here
 	}
 
 	static inline int get(const int pin) {

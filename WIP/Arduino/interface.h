@@ -9,7 +9,7 @@ namespace SPIRLe {
 	protected:
 		virtual bool write(const string& s) = 0;
 		virtual bool write(const char* s) = 0;
-		virtual void read(string& out, int len) = 0;
+		virtual char* read(int len) = 0;
 		virtual bool open() = 0;
 		virtual bool close() = 0;
 		virtual int available() = 0;
