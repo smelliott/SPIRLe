@@ -25,11 +25,12 @@ def set_GPIO_pin(pinId, value, address = 0):
 	# ------ ----------------------- ------- -------
 	#
 	out = struct.pack('<BIBB', 1, address, pinId, value)
+	print out
 	s = serialcomm()
 	s.write(out)
 	x = s.read()
-	x = struct.unpack('<c')
-	print x
+	#x = struct.unpack('<s', x)
+	#print x
 
 def get_analog_pin(pinId, address = 0):
 	# ______ _______________________ _______

@@ -32,8 +32,6 @@ void read_and_put(ICommProvider& p, string& out) {
 void try_parse(ICommProvider& p, string& inst) {
 	const string::size_type inst_size = inst.size();
 
-	p.write(inst);
-
 	//minimum of 6 bytes to form valid message
 	if(inst_size < 6) {
 		return;
