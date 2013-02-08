@@ -171,20 +171,20 @@ int main() {
 	EthernetSocketCommProvider p(9999);
 #endif
 
-	// p.open();
-	// string inst = "";
-	// while(true) {
-	// 	read_and_put(p, inst);
-	// 	try_parse(p, inst);
-	// }
-	// p.close();
-
+	p.open();
+	string inst = "";
 	while(true) {
-		DigitalPin::set(13, 0);
-		delay(2);
-		DigitalPin::set(13, 1);
-		delay(2);
+		read_and_put(p, inst);
+		try_parse(p, inst);
 	}
+	p.close();
+
+	// while(true) {
+	// 	DigitalPin::set(13, 0);
+	// 	delay(2);
+	// 	DigitalPin::set(13, 1);
+	// 	delay(2);
+	// }
 
 	return 0;
 }

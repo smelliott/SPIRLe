@@ -16,6 +16,7 @@ public:
 		else if(v == 0) {
 			digitalWrite(pin, LOW);
 		}
+		exit(1);
 		//epic fail here
 	}
 
