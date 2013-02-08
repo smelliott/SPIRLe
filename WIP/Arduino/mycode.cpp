@@ -31,6 +31,9 @@ void read_and_put(ICommProvider& p, string& out) {
 
 void try_parse(ICommProvider& p, string& inst) {
 	const string::size_type inst_size = inst.size();
+
+	p.write(inst);
+
 	//minimum of 6 bytes to form valid message
 	if(inst_size < 6) {
 		return;
@@ -68,7 +71,7 @@ void try_parse(ICommProvider& p, string& inst) {
 			if(inst_size >= 7) {
 				DigitalPin::set(inst[5], inst[6]);
 				char out[2];
-				out[0] = 1;
+				out[0] = (inst[6] == 1) ? 't' : 'f';
 				out[1] = 0;
 				p.write(out);
 				inst.erase(0, 7);

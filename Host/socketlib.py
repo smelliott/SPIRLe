@@ -1,5 +1,6 @@
 import socket
 
+#TODO: create class to allow connection sharing
 
 # class ssock:
 #     def __init__(self, sock=None):
@@ -28,6 +29,9 @@ import socket
 #                 raise RuntimeError("socket connection broken")
 #             msg = msg + chunk
 #         return msg
+
+def read():
+	return ''
 
 def write(msg):
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
