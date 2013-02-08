@@ -2,7 +2,7 @@ import lib
 
 
 def main():
-    lib.setGpioPin(0, 1)
+    lib.set_GPIO_pin(13, 0)
 
 
 if __name__ == "__main__":
