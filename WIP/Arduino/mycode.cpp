@@ -4,7 +4,7 @@
 #include "Arduino.h"
 #include <stdlib.h>
 
-#define SERIAL
+#define USE_SERIAL
 
 using namespace SPIRLe;
 
@@ -24,12 +24,12 @@ enum Instruction {
 };
 
 void read_and_put(ICommProvider& p, string& out) {
-	char* ret = p.read();
+	char* ret = p.read(0);
 	out += ret;
 	free(ret);
 }
 
-void try_parse(string& inst) {
+void try_parse(ICommProvider& p, string& inst) {
 	const string::size_type inst_size = inst.size();
 	//minimum of 6 bytes to form valid message
 	if(inst_size < 6) {
@@ -51,9 +51,13 @@ void try_parse(string& inst) {
 	switch(inst_index) {
 		case GPIO_GET:
 			if(inst_size >= 6) {
-				int ret = DigitalPin.get(inst[5]);
+				int ret = DigitalPin::get(inst[5]);
+				char* temp = (char*)ret;
 				char out[5];
-				out = (char*)ret;
+				out[0] = temp[0];
+				out[1] = temp[1];
+				out[2] = temp[2];
+				out[3] = temp[3];
 				out[4] = 0;
 				p.write(out);
 				inst.erase(0, 6);
@@ -62,7 +66,7 @@ void try_parse(string& inst) {
 
 		case GPIO_SET:
 			if(inst_size >= 7) {
-				DigitalPin.set(inst[5], inst[6]);
+				DigitalPin::set(inst[5], inst[6]);
 				char out[2];
 				out[0] = 1;
 				out[1] = 0;
@@ -73,9 +77,13 @@ void try_parse(string& inst) {
 
 		case PWM_GET:
 			if(inst_size >= 6) {
-				int ret = PwmPin.get(inst[5]);
+				int ret = PwmPin::get(inst[5]);
+				char* temp = (char*)ret;
 				char out[5];
-				out = (char*)ret;
+				out[0] = temp[0];
+				out[1] = temp[1];
+				out[2] = temp[2];
+				out[3] = temp[3];
 				out[4] = 0;
 				p.write(out);
 				inst.erase(0, 6);
@@ -84,7 +92,7 @@ void try_parse(string& inst) {
 
 		case PWM_SET:
 			if(inst_size >= 7) {
-				PwmPin.set(inst[5], inst[6]);
+				PwmPin::set(inst[5], inst[6]);
 				char out[2];
 				out[0] = 1;
 				out[1] = 0;
@@ -95,9 +103,13 @@ void try_parse(string& inst) {
 
 		case ANALOG_GET:
 			if(inst_size >= 6) {
-				int ret = AnalogPin.get(inst[5]);
+				int ret = AnalogPin::get(inst[5]);
+				char* temp = (char*)ret;
 				char out[5];
-				out = (char*)ret;
+				out[0] = temp[0];
+				out[1] = temp[1];
+				out[2] = temp[2];
+				out[3] = temp[3];
 				out[4] = 0;
 				p.write(out);
 				inst.erase(0, 6);
@@ -106,7 +118,7 @@ void try_parse(string& inst) {
 
 		case ANALOG_SET:
 			if(inst_size >= 7) {
-				AnalogPin.set(inst[5], inst[6]);
+				AnalogPin::set(inst[5], inst[6]);
 				char out[2];
 				out[0] = 1;
 				out[1] = 0;
@@ -152,20 +164,27 @@ int main() {
 	USB.attach();
 #endif
 
-#ifdef SERIAL
+#ifdef USE_SERIAL
 	HardwareSerialCommProvider p(9600);
 #endif
-#ifdef SOCKET
+#ifdef USE_SOCKET
 	EthernetSocketCommProvider p(9999);
 #endif
 
-	p.open();
-	string inst = "";
+	// p.open();
+	// string inst = "";
+	// while(true) {
+	// 	read_and_put(p, inst);
+	// 	try_parse(p, inst);
+	// }
+	// p.close();
+
 	while(true) {
-		read_and_put(p, inst);
-		try_parse(inst);
+		DigitalPin::set(13, 0);
+		delay(2);
+		DigitalPin::set(13, 1);
+		delay(2);
 	}
-	p.close();
 
 	return 0;
 }

@@ -6,7 +6,7 @@
 namespace SPIRLe {
 
 	class ICommProvider {
-	protected:
+	public:
 		virtual bool write(const string& s) = 0;
 		virtual bool write(const char* s) = 0;
 		virtual char* read(int len) = 0;

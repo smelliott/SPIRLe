@@ -50,7 +50,7 @@ namespace SPIRLe {
 	char* HardwareSerialCommProvider::read(int len) {
 		int av = available();
 		if(av == 0) {
-			return null;
+			return 0;
 		}
 		if(len == 0) {
 			len = av;
