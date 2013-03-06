@@ -1,0 +1,4 @@
+<displayname>ReadGP2D12</displayname>
+<displaydescription>Reads from the GP2D12 Infrared Rangefinder</displaydescription>
+<type></type>
+<primitive>true</primitive>
