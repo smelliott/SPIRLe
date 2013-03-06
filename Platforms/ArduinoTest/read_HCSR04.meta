@@ -1,0 +1,4 @@
+<displayname>ReadHCSR04</displayname>
+<displaydescription>Reads from the HCSR04 Ultrasonic Rangefinder</displaydescription>
+<type></type>
+<primitive>true</primitive>
