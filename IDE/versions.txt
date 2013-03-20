@@ -1,0 +1,51 @@
+by Teruki Tauchi
+
+The codes(newest ver0.14mh) are available in the same folder as this text file. Run frame.py needs PyQt installed
+previous versions are available in the older versions folder in DropBox.
+ver 0.00 and ver 0.01 are not available since they are already overwritten.
+
+ver 0.00 around 09/02
+- Very basic interface with dock widgets
+- default screen size is 960,540. Ofcourse, it can be resized
+
+ver 0.01 around 24/02
+- Better looking interface with tabs and lists
+- Added File, Edit, View, and Help menu
+- Programme closes when clicking on File -> Quit or pressing keyboard shortcut Ctrl+Q
+- When closing programme, message pops up asking the user if he/she really wants to quit
+- Set the window icon
+
+ver 0.10 around 27/02
+- Files are now available in DropBox
+- Tool Box window got the list with blocks containing icon and description. Blocks are Flash LED, Move Forward, Turn Right, Turn Left, and Repeat.
+- Made the block to be able to drag and drop on to programme screen
+
+ver 0.11 05/03
+- Fixed the bug of the window not resizing properly
+- Changed the code so that only icons get drag and dropped. Previously, description text were also drag and dropped
+- Changed so that blocks description cannot be edited when double-clicked
+- Changed so that in programme screen, the blocks are chained vertically not horizontally
+- Fixed the bug that blocks get dropped at unexpected position. Previously, when blocks were dragged and dropped too much to the right of the screen, the blocks were put somewhere in the bottom, but now, it is fixed, and it finds the correct position to be dropped.
+- It generates a simple python code from blocks, and prints it on console every time you drag and drop blocks onto the main screen. I had an idea about this since ver0.10. It only prints out the code on console so nothing actually happens in the screen, but this proves that my idea of putting blocks to code actually works.
+- Made the icons on the main screen to be able to be dragged and dropped. However, if it turns out that it is better to be disabled, I will disable this feature.
+
+ver 0.12s 09/03
+- Fixed codes so that the IDE runs on Mark Handley's robot simulator
+- Added Run menu. Keyboard shortcut is Ctrl+R. It will execute the python code.
+- Implemented Code tab that shows the python code generated from blocks. It gets updated everytime the block is being dropped.
+- Added robosim.py and syntax.py: robosim.py defines block codes to run on the Mark Handley's robot simulator. syntax.py is a code that is taken from a website that will make the python code look better with colors.
+- Save as menu is now ready to use. It saves the python code. Right now, Save menu also works as Save as.
+- Open menu loads the code into the code window. However, it does not make change to the block screen yet.
+- Block editor that allows setting speed and distance value for MoveForward block. This shows up when double clicking on MoveForward block or selecting the block and press enter.
+
+ver 0.13s
+- Added delete feature. If you drag and drop blocks to "delete icon", the blocks will be deleted. It can delete multiple blocks at a time by selecting multiple blocks. Alternatively, blocks can be deleted by pressing delete or backspace key, or dragging the delete icon to the block.
+- Added Copy Icon, but it currently does not work.
+- Added output feature. On the output tab, it will show the console window result of the programme.
+
+ver 0.14mh
+- Files are now available in GitHub, thanks to Elliot
+- Added If-Else and Edit blocks. Note that Repeat block, If-Else block, and Flash LED blocks still do not work.
+- Block Editor works for Edit block. The user can now write their own python code to Edit Block
+- Updated Run command. Now, if the user press run, the code will run on the actual robot. I've added a new menu called Run in the simulator, to run on the simulator.
+- Save file will save file with a default name program.py
