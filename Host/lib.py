@@ -1,115 +1,160 @@
 #from socketlib import *
 from seriallib import *
+from socketlib import *
 import struct
 
+class Comm:
+	"""Robot communication library"""
 
-# ! in pack means network order (big endian)
+	def __init__(self):
+		self.s = None
+		self.type = ""
+		return
 
-def get_GPIO_pin(pinId, address = 0):
-	# ______ _______________________ _______
-	# uchar | uint32                | uchar
-	# ------ ----------------------- -------
-	# inst  | address               | pin
-	# ------ ----------------------- -------
-	#
-	out = struct.pack('!BIB', 0, address, pinId)
-	write(out)
-	#need read
-	return 1
+	def setup_serial(self, serial_port, baud_rate, timeout):
+		self.type = "SERIAL"
+		self.serial_port = serial_port
+		self.baud_rate = baud_rate
+		self.timeout = timeout
+		return
 
-def set_GPIO_pin(pinId, value, address = 0):
-	# ______ _______________________ _______ _______
-	# uchar | uint32                | uchar | uchar
-	# ------ ----------------------- ------- -------
-	# inst  | address               | pin   | value
-	# ------ ----------------------- ------- -------
-	#
-	out = struct.pack('<BIBB', 1, address, pinId, value)
-	print out
-	s = serialcomm()
-	s.write(out)
-	x = s.read()
-	#x = struct.unpack('<s', x)
-	#print x
+	def setup_socket(self, addr, port, timeout):
+		self.type = "SOCKET"
+		self.addr = addr
+		self.port = port
+		self.timeout = timeout
+		return
 
-def get_analog_pin(pinId, address = 0):
-	# ______ _______________________ _______
-	# uchar | uint32                | uchar
-	# ------ ----------------------- -------
-	# inst  | address               | pin
-	# ------ ----------------------- -------
-	#
-	out = struct.pack('!BIB', 2, address, pinId)
-	write(out)
-	#need read
-	return 1
+	def init(self):
+		if self.s == None:
+			if self.type == "":
+				return False
 
-def set_analog_pin(pinId, value, address = 0):
-	# ______ _______________________ _______ _______
-	# uchar | uint32                | uchar | uchar
-	# ------ ----------------------- ------- -------
-	# inst  | address               | pin   | value
-	# ------ ----------------------- ------- -------
-	#
-	out = struct.pack('!BIBB', 3, address, pinId, value)
-	write(out)
+			if self.type == "SERIAL":
+				self.s = SerialComm()
+				self.s.conf(self.serial_port, self.baud_rate, self.timeout)
+				return True
 
-def get_PWM_pin(pinId, address = 0):
-	# ______ _______________________ _______
-	# uchar | uint32                | uchar
-	# ------ ----------------------- -------
-	# inst  | address               | pin
-	# ------ ----------------------- -------
-	#
-	out = struct.pack('!BIB', 4, address, pinId)
-	write(out)
-	#need read
-	return 1
+			if self.type == "SOCKET":
+				self.s = SocketComm()
+				self.s.conf(self.addr, self.port, self.timeout)
+				return True
 
-def set_PWM_pin(pinId, value, address = 0):
-	# ______ _______________________ _______ _______
-	# uchar | uint32                | uchar | uchar
-	# ------ ----------------------- ------- -------
-	# inst  | address               | pin   | value
-	# ------ ----------------------- ------- -------
-	#
-	out = struct.pack('!BIBB', 5, address, pinId, value)
-	write(out)
+			return False
+		return True
 
-def write_SPI(hwId, data, address = 0):
-	# ______ _______________________ ________________________ _______ ____________
-	# uchar | uint32                | uint32                 | uchar | variable..
-	# ------ ----------------------- ------------------------ ------- ------------
-	# inst  | address               | hw id (SPI #)          |length | payload
-	# ------ ----------------------- ------------------------ ------- ------------
-	#
-	out = struct.pack('!BIIBs', 6, address, hwId, len(data), data)
-	write(out)
 
-def read_SPI(hwId, length, address = 0):
-	return 'hello'
+	# ! in pack means network order (big endian)
 
-def read_SPI(hwId, address = 0):
-	#as above but reads all available from given SPI
-	return 'hi'
+	def get_GPIO_pin(self, pinId, address = 0):
+		# ______ _______________________ _______
+		# uchar | uint32                | uchar
+		# ------ ----------------------- -------
+		# inst  | address               | pin
+		# ------ ----------------------- -------
+		#
+		out = struct.pack('!BIB', 0, address, pinId)
+		self.init()
+		self.s.write(out)
+		#need read
+		return 1
 
-def write_I2C(hwId, data, address = 0):
-	return
+	def set_GPIO_pin(self, pinId, value, address = 0):
+		# ______ _______________________ _______ _______
+		# uchar | uint32                | uchar | uchar
+		# ------ ----------------------- ------- -------
+		# inst  | address               | pin   | value
+		# ------ ----------------------- ------- -------
+		#
+		out = struct.pack('<BIBB', 1, address, pinId, value)
+		s = serialcomm()
+		s.write(out)
+		x = s.read()
+		#x = struct.unpack('<s', x)
+		#print x
+		return
 
-def read_I2C(hwId, length, address = 0):
-	return 'hello'
+	def get_analog_pin(self, pinId, address = 0):
+		# ______ _______________________ _______
+		# uchar | uint32                | uchar
+		# ------ ----------------------- -------
+		# inst  | address               | pin
+		# ------ ----------------------- -------
+		#
+		out = struct.pack('!BIB', 2, address, pinId)
+		write(out)
+		#need read
+		return 1
 
-def read_I2C(hwId, address = 0):
-	#as above but reads all available from given I2C
-	return 'hi'
+	def set_analog_pin(self, pinId, value, address = 0):
+		# ______ _______________________ _______ _______
+		# uchar | uint32                | uchar | uchar
+		# ------ ----------------------- ------- -------
+		# inst  | address               | pin   | value
+		# ------ ----------------------- ------- -------
+		#
+		out = struct.pack('!BIBB', 3, address, pinId, value)
+		write(out)
+		return
 
-def write_UART(hwId, data, address = 0):
-	return
+	def get_PWM_pin(self, pinId, address = 0):
+		# ______ _______________________ _______
+		# uchar | uint32                | uchar
+		# ------ ----------------------- -------
+		# inst  | address               | pin
+		# ------ ----------------------- -------
+		#
+		out = struct.pack('!BIB', 4, address, pinId)
+		write(out)
+		#need read
+		return 1
 
-def read_UART(hwId, length, address = 0):
-	return 'hello'
+	def set_PWM_pin(self, pinId, value, address = 0):
+		# ______ _______________________ _______ _______
+		# uchar | uint32                | uchar | uchar
+		# ------ ----------------------- ------- -------
+		# inst  | address               | pin   | value
+		# ------ ----------------------- ------- -------
+		#
+		out = struct.pack('!BIBB', 5, address, pinId, value)
+		write(out)
+		return
 
-def read_UART(hwId, address = 0):
-	#as above but reads all available from given UART
-	return 'hi'
+	def write_SPI(self, hwId, data, address = 0):
+		# ______ _______________________ ________________________ _______ ____________
+		# uchar | uint32                | uint32                 | uchar | variable..
+		# ------ ----------------------- ------------------------ ------- ------------
+		# inst  | address               | hw id (SPI #)          |length | payload
+		# ------ ----------------------- ------------------------ ------- ------------
+		#
+		out = struct.pack('!BIIBs', 6, address, hwId, len(data), data)
+		write(out)
+		return
+
+	def read_SPI(self, hwId, length, address = 0):
+		return 'hello'
+
+	def read_SPI(self, hwId, address = 0):
+		#as above but reads all available from given SPI
+		return 'hi'
+
+	def write_I2C(self, hwId, data, address = 0):
+		return
+
+	def read_I2C(self, hwId, length, address = 0):
+		return 'hello'
+
+	def read_I2C(self, hwId, address = 0):
+		#as above but reads all available from given I2C
+		return 'hi'
+
+	def write_UART(self, hwId, data, address = 0):
+		return
+
+	def read_UART(self, hwId, length, address = 0):
+		return 'hello'
+
+	def read_UART(self, hwId, address = 0):
+		#as above but reads all available from given UART
+		return 'hi'
 
