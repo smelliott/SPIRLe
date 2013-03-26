@@ -1,6 +1,6 @@
 by Teruki Tauchi
 
-The codes(newest ver0.14mh) are available in the same folder as this text file. Run frame.py needs PyQt installed
+The codes(newest ver0.13mh) are available in the same folder as this text file. Run frame.py needs PyQt installed
 previous versions are available in the older versions folder in DropBox.
 ver 0.00 and ver 0.01 are not available since they are already overwritten.
 
@@ -49,3 +49,13 @@ ver 0.14mh
 - Block Editor works for Edit block. The user can now write their own python code to Edit Block
 - Updated Run command. Now, if the user press run, the code will run on the actual robot. I've added a new menu called Run in the simulator, to run on the simulator.
 - Save file will save file with a default name program.py
+
+ver 0.145tmp
+- Added read sensor and close block(does not work right now)
+
+ver 0.15
+- Disabled showing read sensor and close block because it does not work right now
+- Repeat Block now works! However, when overwriting and deleting repeat block, it does not delete the repeat closing block right now, so it needs to be fixed. However, it generates code properly. Repeat block editor also works fine. However it does not work as intended if you write something like for i in range(8,10) and then edit again. This also needs to be fixed
+- Copy block also works now. You can copy and paste block with drag and drop.
+- Disabled multiple selection of blocks because that causes an issue when dropping on column that is not on the left
+- Now, it automatically adds new column and row

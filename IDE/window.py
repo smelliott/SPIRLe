@@ -8,7 +8,7 @@ import PyQt4.QtGui as QtGui
 import PyQt4.QtCore as QtCore
 import syntax
 
-testNames = ["flashLED()", "moveForward(s,30,300)", "turnLeft(s)", "turnRight(s)", "while True:", "#If-else block", "#Edit Block\n\t#End of Edit Block"]
+testNames = ["flashLED()", "moveForward(s,30,300)", "turnLeft(s)", "turnRight(s)", "#Repeat Block", "#If-else block", "#Edit Block\n\t#End of Edit Block"]
 
 class ProgrammeWindow(QtGui.QWidget):
 	def __init__(self, parent, fileName):
@@ -26,7 +26,7 @@ class ProgrammeWindow(QtGui.QWidget):
 		v.setDefaultSectionSize(130)
 		v.setVisible(False)
 		self.tableWidget.setColumnCount(3)
-		self.tableWidget.setRowCount(10)
+		self.tableWidget.setRowCount(2)
 		self.tableWidget.setShowGrid(False)
 		self.tableWidget.setIconSize(QtCore.QSize(130,130))
 		
@@ -95,6 +95,7 @@ class ToolWindow(QtGui.QWidget):
 		v.setDefaultSectionSize(110)
 		v.setVisible(False)
 		tableList.setShowGrid(False)
+		tableList.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
 
 		for i in range(len(blockIcons)):
 			iconItem = QtGui.QTableWidgetItem()
@@ -137,6 +138,13 @@ class CopyDeleteWindow(QtGui.QPushButton):
 		return False
 
 	def dragEnterEvent(self, event):
+		if not event.source().__class__.__name__ == "CustomisedTable":
+			return
+		item =  self.parent.programmeList[0].tableWidget.currentItem()
+		if item == None:
+			return
+		elif item.whatsThis() == "#End Repeat Block":
+			return
 		event.accept()
 
 	def dropEvent(self, event):
@@ -148,25 +156,46 @@ class CopyDeleteWindow(QtGui.QPushButton):
 			return
 
 	def copyItems(self):
-		return
+		if self.parent.programmeList[0].tableWidget.currentItem() == None:
+			return
+		self.value = self.parent.programmeList[0].tableWidget.currentItem().clone()
 
-	def pasteItems(self):
-		return
+	def pasteItems(self, x, y):
+		if self.value == None:
+			return
+		tw = self.parent.programmeList[0].tableWidget
+		row = tw.rowAt(y)-1
+		if row == -2 or row >= tw.rowCount()-1:
+			tw.setRowCount(tw.rowCount()+1)
+			row = tw.rowCount()-2
+		col = tw.columnAt(x) 
+		if col == 0:
+			tmp = "" #do nothing
+		elif tw.item(row,col) == None:
+			return
+		elif str(tw.item(row,col).whatsThis()).find("#End Repeat Block") == 0:
+			tmp = tw.item(row,col).clone()
+			if col >= tw.columnCount()-1:
+				tw.setColumnCount(tw.columnCount()+1)
+			tw.setItem(row,col+1,tmp)
+		if str(self.value.whatsThis()).find("for ") == 0 or str(self.value.whatsThis()).find("while ") == 0:
+			if not tw.item(row,tw.columnCount()-1) == None:
+				tw.setColumnCount(tw.columnCount()+1)
+			tw.putEndRepeatBlock(row,col)
+		tw.setItem(row,col,self.value)
+		self.value = self.value.clone()
+		refreshCode(self.parent)
 
 	def deleteItems(self):
-		self.parent.programmeList[0].tableWidget.deleteItems()
+		self.parent.programmeList[0].tableWidget.deleteItems(self.parent.programmeList[0].tableWidget.currentItem())
 
 	def deleteItemsAt(self, x, y):
-		size = self.parent.programmeList[0].tableWidget.size()
-		x = x + size.width()
-		y = y + (size.height()/2)
 		tw = self.parent.programmeList[0].tableWidget
 		if tw.itemAt(x,y) == None:
 			return
-		row = tw.itemAt(x,y).row()
-		col = tw.itemAt(x,y).column()
-		tw.setItem(row,col,None)
-		refreshCode(self.parent)
+		if str(tw.itemAt(x,y).whatsThis()).find("#End Repeat Block") == 0:
+			return
+		tw.deleteItems(tw.itemAt(x,y))
 
 	def mousePressEvent(self, event):
 		pm = QtGui.QPixmap(self.fileName).scaled(50,50)
@@ -174,14 +203,18 @@ class CopyDeleteWindow(QtGui.QPushButton):
 
 	def mouseReleaseEvent(self, event):
 		QtGui.QApplication.restoreOverrideCursor()
+		size = self.parent.programmeList[0].tableWidget.size()
+		x = event.pos().x() + size.width()
+		y = event.pos().y() + (size.height()/2)
 		if self.mode == "Delete":
-			self.deleteItemsAt(event.pos().x(),event.pos().y())
+			self.deleteItemsAt(x,y)
 		if self.mode == "Copy" and self.value is not None:
-			self.pasteItems()
+			self.pasteItems(x,y)
         	
 class CustomisedTable(QtGui.QTableWidget):
 	def __init__(self, parent):
         	super(CustomisedTable, self).__init__(None)
+		self.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
 		self.parent = parent
 		self.initCode = """import socket
 import sys
@@ -199,21 +232,149 @@ if __name__ == "__main__":
 """
 
 	def dragEnterEvent(self, event):
+		if event.source().__class__.__name__ == "CustomisedTable":
+			return
+			# We won't accept drag and drop from itself
 		event.accept()
 
 	def dropEvent(self, event):
-		if(event.pos().x()>130 and self.itemAt(event.pos()) is None):
-			event = QtGui.QDropEvent(QtCore.QPoint(100,event.pos().y()),event.dropAction(),event.mimeData(),event.mouseButtons(),event.keyboardModifiers(),QtCore.QEvent.Drop)
+		if self.columnAt(event.pos().x()) == self.columnCount()-1:
+			self.setColumnCount(self.columnCount()+1)
+		leftCol = self.columnAt(0)
+		if not leftCol == 0:
+			if leftCol == -1:
+				return
+			itm = self.item(self.rowAt(event.pos().y()),leftCol-1)
+			if itm == None:
+				return
+			itmtxt = str(itm.whatsThis())
+			if leftCol == 1:
+				isConditional = itmtxt.find("while ") == 0 or itmtxt.find("for ") == 0 or itmtxt.find("#Repeat Block") == 0
+				if not isConditional:
+					return
+			elif itmtxt.find("#End Repeat Block") == 0:
+				return
+
+		col = self.columnAt(event.pos().x())
+		row = self.rowAt(event.pos().y())
+		if row >= self.rowCount()-1:
+			self.setRowCount(self.rowCount()+1)
+		if self.item(row,0) == None:
+			event = QtGui.QDropEvent(QtCore.QPoint(0,event.pos().y()),event.dropAction(),event.mimeData(),event.mouseButtons(),event.keyboardModifiers(),QtCore.QEvent.Drop)
+			super(CustomisedTable, self).dropEvent(event)
+			refreshCode(self.parent)
+			return
+		leftBlock = str(self.item(row,0).whatsThis())
+		leftBlockIsConditional = leftBlock.find("while ") == 0 or leftBlock.find("for ") == 0 or leftBlock.find("#Repeat Block") == 0
+		if col == 0 and leftBlockIsConditional:
+			return
+		elif not leftBlockIsConditional:
+			if not col == 0:
+				event = QtGui.QDropEvent(QtCore.QPoint(0,event.pos().y()),event.dropAction(),event.mimeData(),event.mouseButtons(),event.keyboardModifiers(),QtCore.QEvent.Drop)
+			super(CustomisedTable, self).dropEvent(event)
+			refreshCode(self.parent)
+			return
+		elif col == 1 and self.item(row,col+1)==None:
+			tmpItem = QtGui.QTableWidgetItem()
+			tmpIcon = QtGui.QIcon("images/repeat_s.png") 
+			tmpItem.setIcon(tmpIcon)
+			tmpItem.setSizeHint(QtCore.QSize(100,100))
+			if leftBlock == "#Repeat Block":
+				leftBlock = "while True:" #default value
+			tmpItem.setWhatsThis(leftBlock)
+			#tmpItem.setFlags(QtCore.Qt.ItemIsEnabled)
+			self.setItem(row,0,tmpItem)
+			self.putEndRepeatBlock(row,col)
+			super(CustomisedTable, self).dropEvent(event)
+			refreshCode(self.parent)
+			return
+		leftShift = 0
+		if leftBlockIsConditional and col > 1 and self.item(row,col) == None:
+			return
+			commentout = """
+		#if leftBlockIsConditional and col > 1 and str(self.item(row,col).whatsThis()).find("#End Repeat Block") == 0:
+			#col = col - 1
+		if leftBlockIsConditional and not leftShift == 0:
+			val = event.pos().x() - (130*leftShift)
+			if val<0:
+				val = 0
+			event = QtGui.QDropEvent(QtCore.QPoint(val,event.pos().y()),event.dropAction(),event.mimeData(),event.mouseButtons(),event.keyboardModifiers(),QtCore.QEvent.Drop)	"""
+		if str(self.itemAt(event.pos().x(),event.pos().y()).whatsThis()).find("#End Repeat Block") == 0:
+			self.putEndRepeatBlock(row,col)
 
 		super(CustomisedTable, self).dropEvent(event)
+		if str(event.source().currentItem().whatsThis()) == testNames[4] and col >= 1:
+			tmpItem = QtGui.QTableWidgetItem()
+			tmpIcon = QtGui.QIcon("images/repeat_s.png") 
+			tmpItem.setIcon(tmpIcon)
+			tmpItem.setSizeHint(QtCore.QSize(100,100))
+			tmpItem.setWhatsThis("while True:")
+			#tmpItem.setFlags(QtCore.Qt.ItemIsEnabled)
+			self.setItem(row,col,tmpItem)
+			if not self.item(row,self.columnCount()-1) == None:
+				self.setColumnCount(self.columnCount()+1)
+			self.putEndRepeatBlock(row,col)
 		refreshCode(self.parent)
+
+	def putEndRepeatBlock(self,row,col):
+		tr = row
+		tc = col + 1
+		if not self.item(tr,tc) == None:
+			tmpVal1 = self.item(tr,tc).clone()
+			while not self.item(tr,tc)==None:
+				tmpVal2 = None
+				if tc+1 >= self.columnCount():
+					self.setColumnCount(self.columnCount()+1)
+				if not self.item(tr,tc+1) == None:
+					tmpVal2 = self.item(tr,tc+1).clone()
+				self.setItem(tr,tc+1,tmpVal1)
+				tmpVal1 = tmpVal2
+				tc = tc + 1
+		tmpItem = QtGui.QTableWidgetItem()
+		tmpIcon = QtGui.QIcon("images/repeat_e.png") 
+		tmpItem.setIcon(tmpIcon)
+		tmpItem.setSizeHint(QtCore.QSize(100,100))
+		tmpItem.setWhatsThis("#End Repeat Block")
+		#tmpItem.setFlags(QtCore.Qt.ItemIsEnabled)
+		self.setItem(row,col+1,tmpItem)
 
 	def returnCode(self):
 		code = ""
 		for i in range(self.rowCount()):
 			if(self.item(i,0)!=None):
-				code = code + "	" + self.item(i,0).whatsThis() + "\n"	
+				itemText = str(self.item(i,0).whatsThis())
+				isCondition = itemText.find("for ")==0 or itemText.find("while ")==0
+				if isCondition:
+					itemText = self.loopStatement(i,0,2)
+				code = code + "	" + itemText + "\n"	
 		return self.initCode + code + self.endCode
+
+	def loopStatement(self, row, col, numTabs):
+		tab = "\n"
+		for i in range(numTabs):
+			tab = tab + "\t"
+		text = str(self.item(row,col).whatsThis())
+		if self.item(row,col+1) == None:
+			return text + tab + "break"
+		elif str(self.item(row,col+1).whatsThis()).find("#End Repeat Block")==0:
+			return text + tab + "break"
+
+		count = 1
+		item = self.item(row,col+count)
+		while not item == None:
+			tmp = str(item.whatsThis())
+			if tmp.find("for ") == 0 or tmp.find("while ") == 0:
+				tmp = self.loopStatement(row,col+count,numTabs+1)
+				while not str(self.item(row,col+count).whatsThis()).find("#End Repeat Block")==0:
+					count = count + 1
+					if self.item(row,col+count) == None:
+						break
+			elif tmp.find("#End Repeat Block")==0:
+				return text
+			text = text + tab + tmp
+			count = count + 1
+			item = self.item(row,col+count)
+		return text
 
 	def mousePressEvent(self,event):
 		# disable clicking and selecting where there is no block
@@ -234,16 +395,37 @@ if __name__ == "__main__":
 				self.blockEditor(self.currentItem())
 		elif event.key() == QtCore.Qt.Key_Delete or event.key() == QtCore.Qt.Key_Backspace:
 			if not self.currentItem() == None:
-				self.deleteItems()		
+				self.deleteItems(self.currentItem())		
 		elif event.key() == QtCore.Qt.Key_Right:
 			if self.currentItem() == None:
 				return
 			elif self.item(self.currentRow(),self.currentColumn()+1) == None:
 				return
+			else:
+				super(CustomisedTable,self).keyPressEvent(event)
 		else:
 			super(CustomisedTable,self).keyPressEvent(event)
 
-	def deleteItems(self):
+	def deleteItems(self,item):
+		row = item.row()
+		col = item.column()
+		isRepeatBlock = str(self.item(row,col).whatsThis()).find("while ")==0 or str(self.item(row,col).whatsThis()).find("for ")==0
+		self.setItem(row,col,None)
+		if col == 0:
+			self.removeRow(row)
+			self.setRowCount(self.rowCount()+1)
+			self.verticalScrollBar().setSliderPosition(0)
+		else:
+			next = col + 1
+			while not self.item(row,next)==None:
+				if next == self.columnCount():
+					break
+				itm = self.item(row,next).clone()
+				self.setItem(row,next-1,itm)
+				next = next + 1
+			self.setItem(row,next-1,None)
+		refreshCode(self.parent)
+		commentout = """
 		for i in range(self.rowCount()):
 			if not self.item(i,0)==None:
 				if self.item(i,0).isSelected():
@@ -259,7 +441,7 @@ if __name__ == "__main__":
 				self.removeRow(count)
 			else:
 				count = count + 1
-		self.setRowCount(row)
+		self.setRowCount(row)"""
 
 	def blockEditor(self,item):
 		for i in range(4):
@@ -272,22 +454,22 @@ if __name__ == "__main__":
 		newWindow.exec_()
 
 class BlockEditor(QtGui.QDialog):
-	def __init__(self, parent, frame):
+	def __init__(self, item, parent):
         	super(BlockEditor, self).__init__(None)
+		self.item = item
 		self.parent = parent
-		self.frame = frame
 		self.initUI()
 
 	def initUI(self):
 		self.paramList = [["speed","distance(motor encoder value)"]]
 		self.setWindowTitle("Block Editor")
-		self.text = str(self.parent.whatsThis())
+		self.text = str(self.item.whatsThis())
 		self.index = self.text.find(",")
 		if self.text.find("moveForward") == 0:
 			self.initForward()
-		elif self.text.find("while ") == 0 or self.text.find("for ") == 0:
+		elif self.text.find("while ") == 0 or self.text.find("for ") == 0 or self.text.find(testNames[4]) == 0:
 			self.initRepeat()
-		elif self.text.find("if ") == 0 or self.text.find("else ") == 0 or self.text.find("elif ") == 0:
+		elif self.text.find("if ") == 0 or self.text.find("else ") == 0 or self.text.find("elif ") == 0 or self.text.find(testNames[5]) == 0:
 			self.initIfElse()
 		elif self.text.find("#Edit Block") == 0:
 			self.initEdit()
@@ -331,28 +513,45 @@ class BlockEditor(QtGui.QDialog):
 		btn = QtGui.QButtonGroup(self)
 
 		infinite = QtGui.QCheckBox("Infinite Loop",self)
-
+		
 		h1 = QtGui.QHBoxLayout()
 		finite = QtGui.QCheckBox("Repeat for ",self)
-		looptimes = QtGui.QLineEdit()
+		
+		self.looptimes = QtGui.QLineEdit()
 		h1_tmp = QtGui.QLabel(" times")
 		h1.addWidget(finite)
-		h1.addWidget(looptimes)
+		h1.addWidget(self.looptimes)
 		h1.addWidget(h1_tmp)
+
+		caution = QtGui.QLabel("\nOptions below are not recommended for beginners",self)
 
 		h2 = QtGui.QHBoxLayout()
 		wl = QtGui.QCheckBox("while ",self)
-		wls = QtGui.QLineEdit()
+		self.wls = QtGui.QLineEdit()
 		h2.addWidget(wl)
-		h2.addWidget(wls)
+		h2.addWidget(self.wls)
 		
 		h3 = QtGui.QHBoxLayout()
 		fl = QtGui.QCheckBox("for ",self)
-		fls = QtGui.QLineEdit()
+		self.fls = QtGui.QLineEdit()
 		h3.addWidget(fl)
-		h3.addWidget(fls)
+		h3.addWidget(self.fls)
 
 		okbtn = QtGui.QPushButton("OK",self)
+		okbtn.clicked.connect(self.setRepeat)
+
+		if self.text.find("while True:") == 0:
+			infinite.setChecked(True)
+		elif self.text.find("for ") == 0 and not self.text.find("in range(") == -1:
+			finite.setChecked(True)
+			self.looptimes.setText(self.text[self.text.find("in range(")+9:-2])
+		elif self.text.find("while ") == 0:
+			wl.setChecked(True)
+			self.wls.setText(self.text[6:])
+		elif self.text.find("for ") == 0:
+			fl.setChecked(True)
+			self.fls.setText(self.text[4:])
+		self.repeatCheck = [infinite, finite, wl, fl]
 
 		btn.addButton(infinite)
 		btn.addButton(finite)
@@ -361,11 +560,41 @@ class BlockEditor(QtGui.QDialog):
 
 		vbox.addWidget(infinite)
 		vbox.addLayout(h1)
+		vbox.addWidget(caution)
 		vbox.addLayout(h2)
 		vbox.addLayout(h3)
 		vbox.addWidget(okbtn)
 
 		self.setLayout(vbox)
+
+	def setRepeat(self):
+		if self.repeatCheck == None:
+			return
+		if self.repeatCheck[0].checkState():
+			self.item.setWhatsThis("while True:")
+		elif self.repeatCheck[1].checkState():
+			val = str(self.looptimes.text()).strip()
+			if not val.isdigit():
+				reply = QtGui.QMessageBox.information(self, 'Message',"Please type in natural number value", QtGui.QMessageBox.Ok, QtGui.QMessageBox.Ok)
+				if reply == QtGui.QMessageBox.Ok:
+					return
+			col = self.parent.programmeList[0].tableWidget.currentColumn()
+			self.item.setWhatsThis("for i" + str(col) + " in range(" + val + "):")
+		elif self.repeatCheck[2].checkState():
+			txt = "while " + str(self.wls.text())
+			if not txt[-1:] == ":":
+				txt = txt + ":"
+			self.item.setWhatsThis(txt)
+		elif self.repeatCheck[3].checkState():
+			txt = "for " + str(self.fls.text())
+			if not txt[-1:] == ":":
+				txt = txt + ":"
+			self.item.setWhatsThis(txt)
+		else:
+			self.close()
+
+		refreshCode(self.parent)
+		self.close()		
 
 	def initIfElse(self):
 		return
@@ -389,20 +618,16 @@ class BlockEditor(QtGui.QDialog):
 		if not content[-2:] == "\n\t":
 			content = content + "\n\t"
 		text = "#Edit Block\n\t" + content + "#End of Edit Block"
-		self.parent.setWhatsThis(text)
-		refreshCode(self.frame)
+		self.item.setWhatsThis(text)
+		refreshCode(self.parent)
 		self.close()
 
 	def setValue(self):
 		values = []
 		for i in range(len(self.paramValue)):
-			txt = str(self.paramValue[i].text())
+			txt = str(self.paramValue[i].text()).strip()
 			if not txt.isdigit():
-				reply = QtGui.QMessageBox.information(self, 'Message',"Please type in integer value", QtGui.QMessageBox.Ok, QtGui.QMessageBox.Ok)
-				if reply == QtGui.QMessageBox.Ok:
-					return
-			if int(txt)<0:
-				reply = QtGui.QMessageBox.information(self, 'Message',"Please type in positive value", QtGui.QMessageBox.Ok, QtGui.QMessageBox.Ok)
+				reply = QtGui.QMessageBox.information(self, 'Message',"Please type in natural number value", QtGui.QMessageBox.Ok, QtGui.QMessageBox.Ok)
 				if reply == QtGui.QMessageBox.Ok:
 					return
 			values.append(txt)
@@ -411,8 +636,8 @@ class BlockEditor(QtGui.QDialog):
 		for i in range(len(values)):
 			text = text + "," + values[i]
 		text = text + ")"
-		self.parent.setWhatsThis(text)
-		refreshCode(self.frame)
+		self.item.setWhatsThis(text)
+		refreshCode(self.parent)
 		self.close()
 
 def refreshCode(parent):

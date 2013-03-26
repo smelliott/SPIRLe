@@ -11,6 +11,20 @@ def reset(socket):
 	msg = "C RME\n"
 	socket.send(msg)
 	socket.recv(80)
+
+def readSensor(socket,value,isLessThan):
+	msg = "S IFL\n"
+	socket.send(msg)
+	sensorValue = int(socket.recv(80)[6:])
+	if sensorValue > 5:
+		sensorValue = (6787/(sensorValue-3))-4
+	else:
+		sensorValue = 200
+	if isLessThan:
+		return sensorValue < value
+	else:
+		return sensorValue > value
+	
 	
 def moveForward(socket,speed,dist):
 	if(dist<0):
