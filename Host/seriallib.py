@@ -12,11 +12,10 @@ class SerialComm:
 		self.s = serial.Serial(serial_port, baud_rate, timeout=tmo)
 		return
 
-	def read(self):
-	    out = self.s.read(10)
+	def read(self, bytes):
+	    out = self.s.read(bytes)
 	    return out
 
 	def write(self, msg):
 	    self.s.write(msg)
-	    self.s.flushOutput()
 	    return

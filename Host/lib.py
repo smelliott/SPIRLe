@@ -132,10 +132,14 @@ class Comm:
 		return
 
 	def read_SPI(self, hwId, length, address = 0):
+		out = struct.pack('!BII', 7, address, hwId)
+		write(out)
 		return 'hello'
 
 	def read_SPI(self, hwId, address = 0):
 		#as above but reads all available from given SPI
+		out = struct.pack('!BII', 7, address, hwId)
+		write(out)
 		return 'hi'
 
 	def write_I2C(self, hwId, data, address = 0):
