@@ -66,3 +66,8 @@ ver 0.16
 - Enabled multiple tabs to be open
 - New File will open New tab
 - Saving file will change the name of the opening tab
+
+ver 0.17
+- Save and load canvases
+- Open files works fine now
+- Able to close tabs

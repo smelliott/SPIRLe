@@ -75,11 +75,11 @@ class ToolWindow(QtGui.QWidget):
 
 	def initUI(self):
 		#Variable Declaration
-		blockIcons = ["flash.png", "forward.png", "turnleft.png", "turnright.png", "repeat.png", "ifelse.png", "edit.png"]
+		self.blockIcons = ["flash.png", "forward.png", "turnleft.png", "turnright.png", "repeat.png", "ifelse.png", "edit.png"]
 		blockNames = ["Flash LED", "Move Forward", "Turn Left", "Turn Right", "Repeat", "If-Else", "Edit"]
 	
-		for i in range(len(blockIcons)):
-			blockIcons[i] = "images/" + blockIcons[i]
+		for i in range(len(self.blockIcons)):
+			self.blockIcons[i] = "images/" + self.blockIcons[i]
 
 		#Table for list
 		hbox = QtGui.QHBoxLayout()
@@ -88,7 +88,7 @@ class ToolWindow(QtGui.QWidget):
 		self.tableList.resize(255,300)
 		self.tableList.setDragEnabled(True)
 		self.tableList.setColumnCount(2)
-		self.tableList.setRowCount(len(blockIcons))
+		self.tableList.setRowCount(len(self.blockIcons))
 		h = self.tableList.horizontalHeader()
 		h.setDefaultSectionSize(110)
 		h.setVisible(False)
@@ -98,9 +98,9 @@ class ToolWindow(QtGui.QWidget):
 		self.tableList.setShowGrid(False)
 		self.tableList.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
 
-		for i in range(len(blockIcons)):
+		for i in range(len(self.blockIcons)):
 			iconItem = QtGui.QTableWidgetItem()
-			icon = QtGui.QIcon(blockIcons[i]) 
+			icon = QtGui.QIcon(self.blockIcons[i]) 
 			iconItem.setIcon(icon)
 			iconItem.setSizeHint(QtCore.QSize(100,100))
 			iconItem.setWhatsThis(testNames[i])
@@ -322,6 +322,7 @@ if __name__ == "__main__":
 			if not self.item(row,self.columnCount()-1) == None:
 				self.setColumnCount(self.columnCount()+1)
 			self.putEndRepeatBlock(row,col)
+
 		refreshCode(self.parent)
 
 	def putEndRepeatBlock(self,row,col):
@@ -671,3 +672,12 @@ class BlockEditor(QtGui.QDialog):
 def refreshCode(parent):
 	tabList = parent.bottomtabList
 	tabList[3].textEdit.setText(tabList[3].getText())
+	index = parent.screentab.currentIndex()
+	tw = parent.programmeList[index].tableWidget
+	i = 0
+	while tw.item(0,0) == None:
+		tw.removeRow(0)
+		i = i + 1
+		if i > 10000:
+			return
+	tw.setRowCount(tw.rowCount()+i)
