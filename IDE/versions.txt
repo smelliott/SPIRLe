@@ -59,3 +59,10 @@ ver 0.15
 - Copy block also works now. You can copy and paste block with drag and drop.
 - Disabled multiple selection of blocks because that causes an issue when dropping on column that is not on the left
 - Now, it automatically adds new column and row
+
+ver 0.16
+- Save Edit block to a file
+- Load Edit block from a file
+- Enabled multiple tabs to be open
+- New File will open New tab
+- Saving file will change the name of the opening tab

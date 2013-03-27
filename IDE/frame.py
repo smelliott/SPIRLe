@@ -12,6 +12,8 @@ import StringIO
 import window
 import socket
 from robosim import *
+sys.path.insert(0,"/home/ubuntu/python/program/ide/robo-sim")
+import src.simulator
 
 # Many of this is not currently implemented yet
 # I will change in the future
@@ -36,6 +38,8 @@ class IDEWindow(QtGui.QMainWindow):
 			return self.runSim
 		if act == 6:
 			return self.close
+		if act == 7:
+			return self.loadBlock
 		else:
 			#not implemented yet
 			return self.nothing
@@ -43,9 +47,10 @@ class IDEWindow(QtGui.QMainWindow):
 	def initUI(self):
 		# Variable Declerations
 		self.isSaved = True
+		self.fileName = "New"
 		self.outputScreen = ""
-		openFiles = ["New"]
-		openFileNames = ["New"]
+		self.openFiles = ["New"]
+		self.openFileNames = [None]
 		bottomTabOpen = ["Debug","Output","Sensor","Code"]
 		# Set Window Title
 		self.setWindowTitle("SPIRLe v1.0")
@@ -55,12 +60,12 @@ class IDEWindow(QtGui.QMainWindow):
 		# Menu Actions
 		actionNameList = [
 		"&New File", "&Open File", "&Save File", "&Save File As...", "&Run", "&Run in the simulator", "&Quit",
-		"&Undo", "&Redo", "&Cut", "&Copy", "&Paste", "&Preference",
+		"&Load Edit Block", "&Undo", "&Redo", "&Cut", "&Copy", "&Paste", "&Preference",
 		"&ToolBox", "&Block Editor", "&Debug Screen", "&Output Screen", "&Sensor Screen", "&Code Screen", "&Folder Screen",
 		"&Help"]
 		shortCutList = [
 		"Ctrl+N", "Ctrl+O", "Ctrl+S", "", "Ctrl+R", "Ctrl+Shift+R", "Ctrl+Q",
-		"Ctrl+Z", "Ctrl+Y", "Ctrl+X", "Ctrl+C", "Ctrl+V", "",
+		"Ctrl+L", "Ctrl+Z", "Ctrl+Y", "Ctrl+X", "Ctrl+C", "Ctrl+V", "",
 		"", "", "", "", "", "", "",
 		"Ctrl+H"]
 		actionList = []
@@ -76,15 +81,15 @@ class IDEWindow(QtGui.QMainWindow):
 			self.file_menu.addAction(actionList[i])
 
         	self.edit_menu = self.menuBar().addMenu("&Edit")
-        	for i in range(7,13):
+        	for i in range(7,14):
 			self.edit_menu.addAction(actionList[i])
 
 		self.view_menu = self.menuBar().addMenu("View")
-		for i in range(13,20):
+		for i in range(14,21):
 			self.view_menu.addAction(actionList[i])
 
 		self.help_menu = self.menuBar().addMenu("Help")
-		self.help_menu.addAction(actionList[20])
+		self.help_menu.addAction(actionList[21])
 
 		# Main Window
 		self.main = QtGui.QWidget(self)
@@ -98,10 +103,11 @@ class IDEWindow(QtGui.QMainWindow):
 		self.screentab.setTabsClosable(True)
 		self.screentab.setMovable(True)
 		self.programmeList = []
-		for i in range(len(openFileNames)):
-			pl = window.ProgrammeWindow(self,openFiles[i])
-			pw = self.screentab.addTab(pl,openFileNames[i])
+		for i in range(len(self.openFiles)):
+			pl = window.ProgrammeWindow(self)
+			pw = self.screentab.addTab(pl,self.openFiles[i])
 			self.programmeList.append(pl)
+		self.screentab.currentChanged.connect(self.refreshCode)
 
 		v = QtGui.QSplitter(QtCore.Qt.Vertical)
 		self.copy = window.CopyDeleteWindow(self,"Copy")
@@ -159,6 +165,11 @@ class IDEWindow(QtGui.QMainWindow):
 		return
 
 	def newFile(self):
+		self.openFiles.append("New")
+		self.openFileNames.append(None)
+		pl = window.ProgrammeWindow(self)
+		self.screentab.addTab(pl,"New")
+		self.programmeList.append(pl)
 		return
 
 	def openFile(self):
@@ -168,16 +179,27 @@ class IDEWindow(QtGui.QMainWindow):
 			self.bottomtabList[3].textEdit.setPlainText(f.read())
 
 	def saveFile(self):
-		f = file("program.py", "w")
-		content = self.bottomtabList[3].textEdit.toPlainText()
-		f.write(content)
+		index = self.screentab.currentIndex()
+		fileName = self.openFileNames[index]
+		if fileName == None:
+			self.saveAs()
+			return
+		else:
+			f = file(fileName, "w")
+			content = self.bottomtabList[3].textEdit.toPlainText()
+			f.write(content)
 
 	def saveAs(self):
+		index = self.screentab.currentIndex()
 		fileName = QtGui.QFileDialog.getSaveFileName()
 		if not fileName.isEmpty():
 			f = file(fileName, "w")
 			content = self.bottomtabList[3].textEdit.toPlainText()
 			f.write(content)
+			self.openFileNames[index] = str(fileName)
+			self.openFiles[index] = os.path.basename(str(fileName))
+			self.screentab.setTabText(index,self.openFiles[index])
+			
 
 	def runCode(self):
 		self.saveFile()
@@ -191,6 +213,42 @@ class IDEWindow(QtGui.QMainWindow):
 		sys.stdout = sys.__stdout__
 		self.outputScreen = buffer.getvalue()
 		self.bottomtabList[1].textEdit.setPlainText(self.outputScreen)
+
+	def loadBlock(self):
+		fileName = QtGui.QFileDialog.getOpenFileName()
+		if not fileName.isEmpty():
+			f = file(fileName)
+			content = f.read()
+			toollist = self.toolbox.widget().tableList
+			row = toollist.rowCount()
+			toollist.setRowCount(row+1)
+			mainFunc = """def main():
+	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	s.connect(('localhost', 55443))"""
+			if content == None:
+				QtGui.QMessageBox.information(self, 'Message',"Failed to load content of file. Isn't it empty?", QtGui.QMessageBox.Ok, QtGui.QMessageBox.Ok)
+				if reply == QtGui.QMessageBox.Ok:
+					return
+			if content.find(mainFunc) == -1 or content.find("s.close()\n") == -1:
+				QtGui.QMessageBox.information(self, 'Message',"File is not in the correct format. Please load file that is created by this IDE.", QtGui.QMessageBox.Ok, QtGui.QMessageBox.Ok)
+				if reply == QtGui.QMessageBox.Ok:
+					return
+			edit = "#Edit Block" + content[content.find(mainFunc)+len(mainFunc):content.find("s.close()\n")] + "#End of Edit Block"
+
+			editItem = QtGui.QTableWidgetItem()
+			editItem.setIcon(QtGui.QIcon("images/edit.png"))
+			editItem.setSizeHint(QtCore.QSize(100,100))
+			editItem.setWhatsThis(edit)
+			toollist.setItem(row,0,editItem)
+
+			nameItem = QtGui.QTableWidgetItem()
+			name = os.path.basename(str(fileName))
+			nameItem.setText(name)
+			nameItem.setFlags(QtCore.Qt.ItemIsEnabled)
+			toollist.setItem(row,1,nameItem)
+
+	def refreshCode(self):
+		window.refreshCode(self)
 
 def main():
 	a = QtGui.QApplication(sys.argv)

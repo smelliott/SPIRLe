@@ -11,7 +11,7 @@ import syntax
 testNames = ["flashLED()", "moveForward(s,30,300)", "turnLeft(s)", "turnRight(s)", "#Repeat Block", "#If-else block", "#Edit Block\n\t#End of Edit Block"]
 
 class ProgrammeWindow(QtGui.QWidget):
-	def __init__(self, parent, fileName):
+	def __init__(self, parent):
         	super(ProgrammeWindow, self).__init__(None)
 		self.initUI(parent)
 
@@ -59,7 +59,8 @@ class TabWindow(QtGui.QWidget):
 
 	def getText(self):
 		if self.windowType == "Code":
-			value = self.parent.programmeList[0].tableWidget.returnCode()
+			index = self.parent.screentab.currentIndex()
+			value = self.parent.programmeList[index].tableWidget.returnCode()
 			return value
 		elif self.windowType == "Output":
 			value = self.parent.outputScreen
@@ -82,20 +83,20 @@ class ToolWindow(QtGui.QWidget):
 
 		#Table for list
 		hbox = QtGui.QHBoxLayout()
-		tableList = QtGui.QTableWidget(self)
-		tableList.setIconSize(QtCore.QSize(100,100))
-		tableList.resize(255,300)
-		tableList.setDragEnabled(True)
-		tableList.setColumnCount(2)
-		tableList.setRowCount(len(blockIcons))
-		h = tableList.horizontalHeader()
+		self.tableList = QtGui.QTableWidget(self)
+		self.tableList.setIconSize(QtCore.QSize(100,100))
+		self.tableList.resize(255,300)
+		self.tableList.setDragEnabled(True)
+		self.tableList.setColumnCount(2)
+		self.tableList.setRowCount(len(blockIcons))
+		h = self.tableList.horizontalHeader()
 		h.setDefaultSectionSize(110)
 		h.setVisible(False)
-		v = tableList.verticalHeader()
+		v = self.tableList.verticalHeader()
 		v.setDefaultSectionSize(110)
 		v.setVisible(False)
-		tableList.setShowGrid(False)
-		tableList.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+		self.tableList.setShowGrid(False)
+		self.tableList.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
 
 		for i in range(len(blockIcons)):
 			iconItem = QtGui.QTableWidgetItem()
@@ -103,15 +104,15 @@ class ToolWindow(QtGui.QWidget):
 			iconItem.setIcon(icon)
 			iconItem.setSizeHint(QtCore.QSize(100,100))
 			iconItem.setWhatsThis(testNames[i])
-			tableList.setItem(i,0,iconItem)
+			self.tableList.setItem(i,0,iconItem)
 
 			nameItem = QtGui.QTableWidgetItem()
 			nameItem.setText(blockNames[i])
 			nameItem.setFlags(QtCore.Qt.ItemIsEnabled)
-			tableList.setItem(i,1,nameItem)
+			self.tableList.setItem(i,1,nameItem)
 
-		tableList.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
-		hbox.addWidget(tableList)
+		self.tableList.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
+		hbox.addWidget(self.tableList)
 		self.setLayout(hbox)
 
 class CopyDeleteWindow(QtGui.QPushButton):
@@ -140,7 +141,8 @@ class CopyDeleteWindow(QtGui.QPushButton):
 	def dragEnterEvent(self, event):
 		if not event.source().__class__.__name__ == "CustomisedTable":
 			return
-		item =  self.parent.programmeList[0].tableWidget.currentItem()
+		index = self.parent.screentab.currentIndex()
+		item =  self.parent.programmeList[index].tableWidget.currentItem()
 		if item == None:
 			return
 		elif item.whatsThis() == "#End Repeat Block":
@@ -156,14 +158,16 @@ class CopyDeleteWindow(QtGui.QPushButton):
 			return
 
 	def copyItems(self):
-		if self.parent.programmeList[0].tableWidget.currentItem() == None:
+		index = self.parent.screentab.currentIndex()
+		if self.parent.programmeList[index].tableWidget.currentItem() == None:
 			return
-		self.value = self.parent.programmeList[0].tableWidget.currentItem().clone()
+		self.value = self.parent.programmeList[index].tableWidget.currentItem().clone()
 
 	def pasteItems(self, x, y):
+		index = self.parent.screentab.currentIndex()
 		if self.value == None:
 			return
-		tw = self.parent.programmeList[0].tableWidget
+		tw = self.parent.programmeList[index].tableWidget
 		row = tw.rowAt(y)-1
 		if row == -2 or row >= tw.rowCount()-1:
 			tw.setRowCount(tw.rowCount()+1)
@@ -187,10 +191,12 @@ class CopyDeleteWindow(QtGui.QPushButton):
 		refreshCode(self.parent)
 
 	def deleteItems(self):
-		self.parent.programmeList[0].tableWidget.deleteItems(self.parent.programmeList[0].tableWidget.currentItem())
+		index = self.parent.screentab.currentIndex()
+		self.parent.programmeList[index].tableWidget.deleteItems(self.parent.programmeList[index].tableWidget.currentItem())
 
 	def deleteItemsAt(self, x, y):
-		tw = self.parent.programmeList[0].tableWidget
+		index = self.parent.screentab.currentIndex()
+		tw = self.parent.programmeList[index].tableWidget
 		if tw.itemAt(x,y) == None:
 			return
 		if str(tw.itemAt(x,y).whatsThis()).find("#End Repeat Block") == 0:
@@ -202,8 +208,9 @@ class CopyDeleteWindow(QtGui.QPushButton):
 		QtGui.QApplication.setOverrideCursor(QtGui.QCursor(pm))
 
 	def mouseReleaseEvent(self, event):
+		index = self.parent.screentab.currentIndex()
 		QtGui.QApplication.restoreOverrideCursor()
-		size = self.parent.programmeList[0].tableWidget.size()
+		size = self.parent.programmeList[index].tableWidget.size()
 		x = event.pos().x() + size.width()
 		y = event.pos().y() + (size.height()/2)
 		if self.mode == "Delete":
@@ -223,6 +230,7 @@ from robosim import *
 
 def main():
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	#s = serial.Serial("COM1", 9600)
 	s.connect(('localhost', 55443))
 """
 		self.endCode = """	s.close()
@@ -568,6 +576,7 @@ class BlockEditor(QtGui.QDialog):
 		self.setLayout(vbox)
 
 	def setRepeat(self):
+		index = self.parent.screentab.currentIndex()
 		if self.repeatCheck == None:
 			return
 		if self.repeatCheck[0].checkState():
@@ -578,7 +587,7 @@ class BlockEditor(QtGui.QDialog):
 				reply = QtGui.QMessageBox.information(self, 'Message',"Please type in natural number value", QtGui.QMessageBox.Ok, QtGui.QMessageBox.Ok)
 				if reply == QtGui.QMessageBox.Ok:
 					return
-			col = self.parent.programmeList[0].tableWidget.currentColumn()
+			col = self.parent.programmeList[index].tableWidget.currentColumn()
 			self.item.setWhatsThis("for i" + str(col) + " in range(" + val + "):")
 		elif self.repeatCheck[2].checkState():
 			txt = "while " + str(self.wls.text())
@@ -605,10 +614,15 @@ class BlockEditor(QtGui.QDialog):
 		self.textEdit = QtGui.QTextEdit()
 		self.textEdit.setText(text)
 		syntax.PythonHighlighter(self.textEdit.document())
+		hbox = QtGui.QHBoxLayout()
 		btn = QtGui.QPushButton("OK", self)
 		btn.clicked.connect(self.setEdit)
+		sav = QtGui.QPushButton("Save", self)
+		sav.clicked.connect(self.saveEdit)
+		hbox.addWidget(btn)
+		hbox.addWidget(sav)
 		vbox.addWidget(self.textEdit)
-		vbox.addWidget(btn)
+		vbox.addLayout(hbox)
 		self.setLayout(vbox)
 
 	def setEdit(self):
@@ -621,6 +635,20 @@ class BlockEditor(QtGui.QDialog):
 		self.item.setWhatsThis(text)
 		refreshCode(self.parent)
 		self.close()
+
+	def saveEdit(self):
+		if self.textEdit is None:
+			return
+		fileName = QtGui.QFileDialog.getSaveFileName()
+		if not fileName.isEmpty():
+			content = self.textEdit.toPlainText().replace("\n","\n\t")
+			if not content[-2:] == "\n\t":
+				content = content + "\n"
+			else:
+				content = content[:-1]
+			f = file(fileName, "w")
+			content = CustomisedTable(None).initCode + "\t" + content + CustomisedTable(None).endCode
+			f.write(content)
 
 	def setValue(self):
 		values = []
