@@ -12,6 +12,8 @@ import StringIO
 import window
 import socket
 from robosim import *
+sys.path.insert(0,"/home/ubuntu/python/program/ide/robo-sim")
+import src.simulator
 
 # Many of this is not currently implemented yet
 # I will change in the future
@@ -238,29 +240,19 @@ class IDEWindow(QtGui.QMainWindow):
 					i = i + 1
 
 	def setItem(self,table,row,col,whatsBlock):
-		iconFile = "this is null"
-		if (whatsBlock.find("#Edit Block") == 0):
-			iconFile = "images/edit.png"
-		elif not (whatsBlock.find("#Read Sensor") == -1):
-			iconFile = "images/rsensor_s.png"
-		elif not (whatsBlock.find("#Read Motor Encoder") == -1):
-			iconFile = "images/motorencoder_s.png"
-		else:
-			for i in range(len(window.testNames)):
-				if whatsBlock.find(window.testNames[i][:7])==0:
-					iconFile = self.toolbox.widget().blockIcons[i]
-			if iconFile.find("this is null")==0:
-				if whatsBlock.find("for ")==0 or whatsBlock.find("while ")==0:
-					iconFile = "images/repeat_s.png"
-				elif whatsBlock.find("if ")==0 or whatsBlock.find("else:")==0 or whatsBlock.find("elif ")==0:
-					iconFile = "images/ifelse_s.png"
-				elif whatsBlock.find("#End Conditional Block")==0:
-					index = self.screentab.currentIndex()
-					table = self.programmeList[index].tableWidget
-					table.putEndConditionalBlock(int(row),int(col)-1)
-		if iconFile.find("this is null") == 0:
+		val = -1
+		for i in range(len(window.testNames)):
+			if whatsBlock.find(window.testNames[i][:7])==0:
+				val = i
+		if val == -1:
+			if whatsBlock.find("for ")==0 or whatsBlock.find("while ")==0:
+				val = 4
+			elif whatsBlock.find("if ")==0 or whatsBlock.find("else:")==0 or whatsBlock.find("elif ")==0:
+				val = 5
+		if val == -1:
 			return #no blocks match
 		else:
+			iconFile = self.toolbox.widget().blockIcons[val]
 			item = QtGui.QTableWidgetItem()
 			item.setIcon(QtGui.QIcon(iconFile))
 			item.setSizeHint(QtCore.QSize(130,130))
@@ -308,14 +300,9 @@ class IDEWindow(QtGui.QMainWindow):
 		return text
 
 	def runCode(self):
-		self.saveForRun()
-		bashCommand = "sshpass -p \"localuser\" scp -o \"StrictHostKeyChecking no\" program_tmp.py robosim.py localuser@128.16.79.5:;sshpass -p \"localuser\" ssh -o \"StrictHostKeyChecking no\" localuser@128.16.79.5 python program_tmp.py"
+		self.saveFile()
+		bashCommand = "sshpass -p \"localuser\" scp -o \"StrictHostKeyChecking no\" program.py robosim.py localuser@128.16.79.5:;sshpass -p \"localuser\" ssh -o \"StrictHostKeyChecking no\" localuser@128.16.79.5 python program.py"
 		os.system(bashCommand)
-
-	def saveForRun(self):
-		f = file("program_tmp.py", "w")
-		content = str(self.bottomtabList[3].textEdit.toPlainText()) + self.canvasText()
-		f.write(content)
 
 	def runSim(self):
 		buffer = StringIO.StringIO()
@@ -333,7 +320,9 @@ class IDEWindow(QtGui.QMainWindow):
 			toollist = self.toolbox.widget().tableList
 			row = toollist.rowCount()
 			toollist.setRowCount(row+1)
-			mainFunc = """s.connect(('localhost', 55443))"""
+			mainFunc = """def main():
+	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	s.connect(('localhost', 55443))"""
 			if content == None:
 				QtGui.QMessageBox.information(self, 'Message',"Failed to load content of file. Isn't it empty?", QtGui.QMessageBox.Ok, QtGui.QMessageBox.Ok)
 				if reply == QtGui.QMessageBox.Ok:
@@ -349,6 +338,7 @@ class IDEWindow(QtGui.QMainWindow):
 			editItem.setSizeHint(QtCore.QSize(100,100))
 			editItem.setWhatsThis(edit)
 			toollist.setItem(row,0,editItem)
+
 			nameItem = QtGui.QTableWidgetItem()
 			name = os.path.basename(str(fileName))
 			nameItem.setText(name)
@@ -369,3 +359,4 @@ def main():
 
 if __name__ == "__main__":
 	main()
+

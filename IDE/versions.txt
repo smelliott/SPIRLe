@@ -71,3 +71,14 @@ ver 0.17
 - Save and load canvases
 - Open files works fine now
 - Able to close tabs
+
+ver 0.18
+- Solved some of issues/weird behaviour regarding with conditional block. It can now open file containing conditional block and deleting conditional block works properly. Other small issues solved as well.
+- Edit block now indents properly within conditional block
+- If-else block, read sensor, and motor encoder block now splits
+- Added Read Sensor and Set Sensor Block
+- Added Set Motor and Motor Encoder Block
+- Block Editor works for the added blocks and if-else block
+- (Small Change) When running on the robot, the temporary file name was program.py but changed to program_tmp.py
+- Added wallfollower.py and runwallfollower.py which is an example python file created by this IDE
+- Fixed some of the problems with regards to nested condition, however there are still issues/bugs with nested condition

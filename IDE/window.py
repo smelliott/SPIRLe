@@ -8,7 +8,7 @@ import PyQt4.QtGui as QtGui
 import PyQt4.QtCore as QtCore
 import syntax
 
-testNames = ["flashLED()", "moveForward(s,30,300)", "turnLeft(s)", "turnRight(s)", "#Repeat Block", "#If-else block", "#Edit Block\n\t#End of Edit Block"]
+testNames = ["flashLED()", "moveForward(s,30,300)", "setMotor(s,40,40)", "turnLeft(s)", "turnRight(s)", "setSensor(s,\"R\",-45)", "if readSensor(s,\"IFR\")<100: #Read Sensor", "if readMotorEncoder(s,\"MELR\")<1000: #Read Motor Encoder", "#Repeat Block", "#If-else block", "#Edit Block\n\t#End of Edit Block"]
 
 class ProgrammeWindow(QtGui.QWidget):
 	def __init__(self, parent):
@@ -75,8 +75,8 @@ class ToolWindow(QtGui.QWidget):
 
 	def initUI(self):
 		#Variable Declaration
-		self.blockIcons = ["flash.png", "forward.png", "turnleft.png", "turnright.png", "repeat.png", "ifelse.png", "edit.png"]
-		blockNames = ["Flash LED", "Move Forward", "Turn Left", "Turn Right", "Repeat", "If-Else", "Edit"]
+		self.blockIcons = ["flash.png", "forward.png", "setmotor.png", "turnleft.png", "turnright.png", "ssensor.png", "rsensor.png", "motorencoder.png", "repeat.png", "ifelse.png", "edit.png"]
+		blockNames = ["Flash LED", "Move Forward", "Set Motor (For Advanced Users)", "Turn Left", "Turn Right", "Set Sensor", "Read Sensor", "Read Motor Encoder", "Repeat", "If-Else (For Advanced Users)", "Edit (For Advanced Users)"]
 	
 		for i in range(len(self.blockIcons)):
 			self.blockIcons[i] = "images/" + self.blockIcons[i]
@@ -145,7 +145,7 @@ class CopyDeleteWindow(QtGui.QPushButton):
 		item =  self.parent.programmeList[index].tableWidget.currentItem()
 		if item == None:
 			return
-		elif item.whatsThis() == "#End Repeat Block":
+		elif item.whatsThis() == "#End Conditional Block":
 			return
 		event.accept()
 
@@ -177,15 +177,15 @@ class CopyDeleteWindow(QtGui.QPushButton):
 			tmp = "" #do nothing
 		elif tw.item(row,col) == None:
 			return
-		elif str(tw.item(row,col).whatsThis()).find("#End Repeat Block") == 0:
+		elif str(tw.item(row,col).whatsThis()).find("#End Conditional Block") == 0:
 			tmp = tw.item(row,col).clone()
 			if col >= tw.columnCount()-1:
 				tw.setColumnCount(tw.columnCount()+1)
 			tw.setItem(row,col+1,tmp)
-		if str(self.value.whatsThis()).find("for ") == 0 or str(self.value.whatsThis()).find("while ") == 0:
+		if str(self.value.whatsThis()).find("for ") == 0 or str(self.value.whatsThis()).find("while ") == 0 or str(self.value.whatsThis()).find("if ") == 0 or str(self.value.whatsThis()).find("elif ") == 0 or str(self.value.whatsThis()).find("else:") == 0:
 			if not tw.item(row,tw.columnCount()-1) == None:
 				tw.setColumnCount(tw.columnCount()+1)
-			tw.putEndRepeatBlock(row,col)
+			tw.putEndConditionalBlock(row,col)
 		tw.setItem(row,col,self.value)
 		self.value = self.value.clone()
 		refreshCode(self.parent)
@@ -199,7 +199,7 @@ class CopyDeleteWindow(QtGui.QPushButton):
 		tw = self.parent.programmeList[index].tableWidget
 		if tw.itemAt(x,y) == None:
 			return
-		if str(tw.itemAt(x,y).whatsThis()).find("#End Repeat Block") == 0:
+		if str(tw.itemAt(x,y).whatsThis()).find("#End Conditional Block") == 0:
 			return
 		tw.deleteItems(tw.itemAt(x,y))
 
@@ -257,14 +257,19 @@ if __name__ == "__main__":
 				return
 			itmtxt = str(itm.whatsThis())
 			if leftCol == 1:
-				isConditional = itmtxt.find("while ") == 0 or itmtxt.find("for ") == 0 or itmtxt.find("#Repeat Block") == 0
+				isConditional = itmtxt.find("while ") == 0 or itmtxt.find("for ") == 0 or itmtxt.find("#Repeat Block") == 0 or itmtxt.find("if ") == 0 or itmtxt.find("elif ") == 0 or itmtxt.find("else:") == 0 or itmtxt.find("#If-else") == 0
 				if not isConditional:
 					return
-			elif itmtxt.find("#End Repeat Block") == 0:
-				return
+			#elif itmtxt.find("#End Conditional Block") == 0:
+				#return
 
 		col = self.columnAt(event.pos().x())
 		row = self.rowAt(event.pos().y())
+		if not self.item(row,col) == None:
+			tmpBlock = str(self.item(row,col).whatsThis())
+			blockIsConditional = tmpBlock.find("while ") == 0 or tmpBlock.find("for ") == 0 or tmpBlock.find("#Repeat Block") == 0 or tmpBlock.find("if ") == 0 or tmpBlock.find("elif ") == 0 or tmpBlock.find("else:") == 0 or tmpBlock.find("#If-else") == 0
+			if blockIsConditional:
+				return
 		if row >= self.rowCount()-1:
 			self.setRowCount(self.rowCount()+1)
 		if self.item(row,0) == None:
@@ -273,7 +278,7 @@ if __name__ == "__main__":
 			refreshCode(self.parent)
 			return
 		leftBlock = str(self.item(row,0).whatsThis())
-		leftBlockIsConditional = leftBlock.find("while ") == 0 or leftBlock.find("for ") == 0 or leftBlock.find("#Repeat Block") == 0
+		leftBlockIsConditional = leftBlock.find("while ") == 0 or leftBlock.find("for ") == 0 or leftBlock.find("#Repeat Block") == 0 or leftBlock.find("if ") == 0 or leftBlock.find("elif ") == 0 or leftBlock.find("else:") == 0 or leftBlock.find("#If-else") == 0
 		if col == 0 and leftBlockIsConditional:
 			return
 		elif not leftBlockIsConditional:
@@ -284,48 +289,73 @@ if __name__ == "__main__":
 			return
 		elif col == 1 and self.item(row,col+1)==None:
 			tmpItem = QtGui.QTableWidgetItem()
-			tmpIcon = QtGui.QIcon("images/repeat_s.png") 
+			iconFileName = ""
+			if not leftBlock.find("#Read Sensor") == -1:
+				iconFileName = "images/rsensor_s.png"
+			elif not leftBlock.find("#Read Motor Encoder") == -1:
+				iconFileName = "images/motorencoder_s.png"
+			elif leftBlock.find("while ") == 0 or leftBlock.find("for ") == 0 or leftBlock.find("#Repeat Block") == 0:
+				iconFileName = "images/repeat_s.png"
+			elif leftBlock.find("if ") == 0 or leftBlock.find("elif ") == 0 or leftBlock.find("else:") == 0 or leftBlock.find("#If-else") == 0:
+				iconFileName = "images/ifelse_s.png"
+			tmpIcon = QtGui.QIcon(iconFileName) 
 			tmpItem.setIcon(tmpIcon)
 			tmpItem.setSizeHint(QtCore.QSize(100,100))
 			if leftBlock == "#Repeat Block":
 				leftBlock = "while True:" #default value
+			elif leftBlock == "#If-else block":
+				leftBlock = "if True:" #default value
 			tmpItem.setWhatsThis(leftBlock)
 			#tmpItem.setFlags(QtCore.Qt.ItemIsEnabled)
 			self.setItem(row,0,tmpItem)
-			self.putEndRepeatBlock(row,col)
+			self.putEndConditionalBlock(row,col)
 			super(CustomisedTable, self).dropEvent(event)
 			refreshCode(self.parent)
-			return
 		leftShift = 0
 		if leftBlockIsConditional and col > 1 and self.item(row,col) == None:
 			return
 			commentout = """
-		#if leftBlockIsConditional and col > 1 and str(self.item(row,col).whatsThis()).find("#End Repeat Block") == 0:
+		#if leftBlockIsConditional and col > 1 and str(self.item(row,col).whatsThis()).find("#End Conditional Block") == 0:
 			#col = col - 1
 		if leftBlockIsConditional and not leftShift == 0:
 			val = event.pos().x() - (130*leftShift)
 			if val<0:
 				val = 0
 			event = QtGui.QDropEvent(QtCore.QPoint(val,event.pos().y()),event.dropAction(),event.mimeData(),event.mouseButtons(),event.keyboardModifiers(),QtCore.QEvent.Drop)	"""
-		if str(self.itemAt(event.pos().x(),event.pos().y()).whatsThis()).find("#End Repeat Block") == 0:
-			self.putEndRepeatBlock(row,col)
+		if str(self.itemAt(event.pos().x(),event.pos().y()).whatsThis()).find("#End Conditional Block") == 0:
+			self.putEndConditionalBlock(row,col)
 
 		super(CustomisedTable, self).dropEvent(event)
-		if str(event.source().currentItem().whatsThis()) == testNames[4] and col >= 1:
-			tmpItem = QtGui.QTableWidgetItem()
-			tmpIcon = QtGui.QIcon("images/repeat_s.png") 
-			tmpItem.setIcon(tmpIcon)
-			tmpItem.setSizeHint(QtCore.QSize(100,100))
-			tmpItem.setWhatsThis("while True:")
-			#tmpItem.setFlags(QtCore.Qt.ItemIsEnabled)
-			self.setItem(row,col,tmpItem)
-			if not self.item(row,self.columnCount()-1) == None:
-				self.setColumnCount(self.columnCount()+1)
-			self.putEndRepeatBlock(row,col)
+		if col >= 1:
+			iconFileName = "null"
+			iconWhatsThis = ""
+			if str(event.source().currentItem().whatsThis()) == testNames[8]:
+				iconFileName = "images/repeat_s.png"
+				iconWhatsThis = "while True:"
+			elif str(event.source().currentItem().whatsThis()) == testNames[6]:
+				iconFileName = "images/rsensor_s.png"
+				iconWhatsThis = testNames[6]
+			elif str(event.source().currentItem().whatsThis()) == testNames[7]:
+				iconFileName = "images/motorencoder_s.png"
+				iconWhatsThis = testNames[7]
+			elif str(event.source().currentItem().whatsThis()) == testNames[9]:
+				iconFileName = "images/ifelse_s.png"
+				iconWhatsThis = "if True:"
+			if iconFileName.find("null")==-1:
+				tmpItem = QtGui.QTableWidgetItem()
+				tmpIcon = QtGui.QIcon(iconFileName) 
+				tmpItem.setIcon(tmpIcon)
+				tmpItem.setSizeHint(QtCore.QSize(100,100))
+				tmpItem.setWhatsThis(iconWhatsThis)
+				#tmpItem.setFlags(QtCore.Qt.ItemIsEnabled)
+				self.setItem(row,col,tmpItem)
+				if not self.item(row,self.columnCount()-1) == None:
+					self.setColumnCount(self.columnCount()+1)
+				self.putEndConditionalBlock(row,col)
 
 		refreshCode(self.parent)
 
-	def putEndRepeatBlock(self,row,col):
+	def putEndConditionalBlock(self,row,col):
 		tr = row
 		tc = col + 1
 		if not self.item(tr,tc) == None:
@@ -339,11 +369,48 @@ if __name__ == "__main__":
 				self.setItem(tr,tc+1,tmpVal1)
 				tmpVal1 = tmpVal2
 				tc = tc + 1
+
+		i = col + 1
+		iconFileName = ""
+		numClose = 0
+		while i >= 0:
+			if self.item(row,i)==None:
+				i = i - 1
+			elif str(self.item(row,i).whatsThis()).find("#End Conditional Block")==0:
+				numClose = numClose + 1
+				i = i - 1
+			elif (not str(self.item(row,i).whatsThis()).find("#Read Sensor") == -1):
+				if numClose <= 0:
+					iconFileName = "images/rsensor_e.png"
+					break
+				else:
+					numClose = numClose - 1
+			elif (not str(self.item(row,i).whatsThis()).find("#Read Motor Encoder") == -1):
+				if numClose <= 0:
+					iconFileName = "images/motorencoder_e.png"
+					break
+				else:
+					numClose = numClose - 1
+			elif (str(self.item(row,i).whatsThis()).find("for ") == 0 or str(self.item(row,i).whatsThis()).find("while ") == 0):
+				if numClose <= 0:
+					iconFileName = "images/repeat_e.png"
+					break
+				else:
+					numClose = numClose - 1
+			elif (str(self.item(row,i).whatsThis()).find("if ") == 0 or str(self.item(row,i).whatsThis()).find("elif ") == 0 or str(self.item(row,i).whatsThis()).find("else:") == 0):
+				if numClose <= 0:
+					iconFileName = "images/ifelse_e.png"
+					break
+				else:
+					numClose = numClose - 1
+			else:
+				i = i - 1
+
 		tmpItem = QtGui.QTableWidgetItem()
-		tmpIcon = QtGui.QIcon("images/repeat_e.png") 
+		tmpIcon = QtGui.QIcon(iconFileName) 
 		tmpItem.setIcon(tmpIcon)
 		tmpItem.setSizeHint(QtCore.QSize(100,100))
-		tmpItem.setWhatsThis("#End Repeat Block")
+		tmpItem.setWhatsThis("#End Conditional Block")
 		#tmpItem.setFlags(QtCore.Qt.ItemIsEnabled)
 		self.setItem(row,col+1,tmpItem)
 
@@ -352,33 +419,42 @@ if __name__ == "__main__":
 		for i in range(self.rowCount()):
 			if(self.item(i,0)!=None):
 				itemText = str(self.item(i,0).whatsThis())
-				isCondition = itemText.find("for ")==0 or itemText.find("while ")==0
+				isCondition = itemText.find("for ")==0 or itemText.find("while ")==0 or itemText.find("if ")==0 or itemText.find("elif ")==0 or itemText.find("else:")==0
 				if isCondition:
-					itemText = self.loopStatement(i,0,2)
+					itemText = self.conditionalStatement(i,0,2)
 				code = code + "	" + itemText + "\n"	
-		return self.initCode + code + self.endCode
+		return self.initCode + code.replace("\n\n","\n") + self.endCode
+		# There is a weird bug that the generated code sometimes has lines without any code. I don't know the reason yet, but I am using replace("\n\n","\n") for now to fix this problem
 
-	def loopStatement(self, row, col, numTabs):
+	def conditionalStatement(self, row, col, numTabs):
 		tab = "\n"
 		for i in range(numTabs):
 			tab = tab + "\t"
 		text = str(self.item(row,col).whatsThis())
 		if self.item(row,col+1) == None:
 			return text + tab + "break"
-		elif str(self.item(row,col+1).whatsThis()).find("#End Repeat Block")==0:
+		elif str(self.item(row,col+1).whatsThis()).find("#End Conditional Block")==0:
 			return text + tab + "break"
 
 		count = 1
 		item = self.item(row,col+count)
 		while not item == None:
 			tmp = str(item.whatsThis())
-			if tmp.find("for ") == 0 or tmp.find("while ") == 0:
-				tmp = self.loopStatement(row,col+count,numTabs+1)
-				while not str(self.item(row,col+count).whatsThis()).find("#End Repeat Block")==0:
+			if tmp.find("for ") == 0 or tmp.find("while ") == 0 or tmp.find("if ") == 0 or tmp.find("elif ") == 0 or tmp.find("else:") == 0:
+				tmp = self.conditionalStatement(row,col+count,numTabs+1)
+				tmpBlacket = 0
+				while (not str(self.item(row,col+count).whatsThis()).find("#End Conditional Block")==0) or tmpBlacket > 1:
+					tmpTxt = str(self.item(row,col+count).whatsThis())
+					if tmpTxt.find("for ") == 0 or tmpTxt.find("while ") == 0 or tmpTxt.find("if ") == 0 or tmpTxt.find("elif ") == 0 or tmpTxt.find("else:") == 0:
+						tmpBlacket = tmpBlacket + 1
+					elif tmpTxt.find("#End Conditional Block")==0:
+						tmpBlacket = tmpBlacket - 1
 					count = count + 1
 					if self.item(row,col+count) == None:
 						break
-			elif tmp.find("#End Repeat Block")==0:
+			elif tmp.find("#Edit Block")==0:
+				tmp = tmp.replace("\n\t",tab)				
+			elif tmp.find("#End Conditional Block")==0:
 				return text
 			text = text + tab + tmp
 			count = count + 1
@@ -418,7 +494,7 @@ if __name__ == "__main__":
 	def deleteItems(self,item):
 		row = item.row()
 		col = item.column()
-		isRepeatBlock = str(self.item(row,col).whatsThis()).find("while ")==0 or str(self.item(row,col).whatsThis()).find("for ")==0
+		isConditionalBlock = str(item.whatsThis()).find("while ")==0 or str(item.whatsThis()).find("for ")==0 or str(item.whatsThis()).find("if ")==0 or str(item.whatsThis()).find("elif ")==0 or str(item.whatsThis()).find("else:")==0
 		self.setItem(row,col,None)
 		if col == 0:
 			self.removeRow(row)
@@ -433,6 +509,15 @@ if __name__ == "__main__":
 				self.setItem(row,next-1,itm)
 				next = next + 1
 			self.setItem(row,next-1,None)
+			if isConditionalBlock:
+				while True:
+					item = self.item(row,col)
+					if item == None:
+						break
+					if str(item.whatsThis()).find("#End Conditional Block")==0:
+						self.deleteItems(item)
+						break
+					self.deleteItems(item)
 		refreshCode(self.parent)
 		commentout = """
 		for i in range(self.rowCount()):
@@ -453,8 +538,8 @@ if __name__ == "__main__":
 		self.setRowCount(row)"""
 
 	def blockEditor(self,item):
-		for i in range(4):
-			if i == 1:
+		for i in range(5):
+			if i == 1 or i == 2:
 				continue
 			if item.whatsThis()[:8] == testNames[i][:8]:
 				return
@@ -470,18 +555,26 @@ class BlockEditor(QtGui.QDialog):
 		self.initUI()
 
 	def initUI(self):
-		self.paramList = [["speed","distance(motor encoder value)"]]
+		self.paramList = [["speed","distance(motor encoder value)"],["left motor","right motor"]]
 		self.setWindowTitle("Block Editor")
 		self.text = str(self.item.whatsThis())
 		self.index = self.text.find(",")
-		if self.text.find("moveForward") == 0:
-			self.initForward()
-		elif self.text.find("while ") == 0 or self.text.find("for ") == 0 or self.text.find(testNames[4]) == 0:
-			self.initRepeat()
-		elif self.text.find("if ") == 0 or self.text.find("else ") == 0 or self.text.find("elif ") == 0 or self.text.find(testNames[5]) == 0:
-			self.initIfElse()
-		elif self.text.find("#Edit Block") == 0:
+		if self.text.find("#Edit Block") == 0:
 			self.initEdit()
+		elif self.text.find("moveForward(") == 0:
+			self.initForward()
+		elif not self.text.find("#Read Sensor") == -1:
+			self.initReadSensor()
+		elif not self.text.find("#Read Motor Encoder") == -1:
+			self.initMotorEncoder()
+		elif self.text.find("setMotor(") == 0:
+			self.initSetMotor()
+		elif self.text.find("setSensor(") == 0:
+			self.initSetSensor()
+		elif self.text.find("while ") == 0 or self.text.find("for ") == 0 or self.text.find(testNames[8]) == 0:
+			self.initRepeat()
+		elif self.text.find("if ") == 0 or self.text.find("else:") == 0 or self.text.find("elif ") == 0 or self.text.find(testNames[9]) == 0:
+			self.initIfElse()
 
 	def initForward(self):
 		param = self.text.split(",")
@@ -498,6 +591,42 @@ class BlockEditor(QtGui.QDialog):
 			edit = QtGui.QLineEdit(self)
 			edit.setFont(font)
 			if i == len(self.paramList[0])-1:
+				edit.setText(param[i+1][:-1])
+			else:
+				edit.setText(param[i+1])
+			self.paramValue.append(edit)
+			h.addWidget(txt)
+			h.addWidget(edit)
+			h.setSizes([250,150])
+			vbox.addWidget(h)
+
+		#button
+		h = QtGui.QSplitter(QtCore.Qt.Horizontal)
+		btn = QtGui.QPushButton("OK", self)
+		btn.clicked.connect(self.setValue) 
+		h.addWidget(QtGui.QWidget()) #add dummy
+		h.addWidget(btn)
+		h.setSizes([300,100])
+		vbox.addWidget(h)
+		self.setLayout(vbox)
+
+	def initSetMotor(self):
+		param = self.text.split(",")
+
+		vbox = QtGui.QVBoxLayout()
+		caution = QtGui.QLabel("Set Motor is not recommended for beginner.\nPlease use Move Forward Block instead where possible",self)
+		vbox.addWidget(caution)
+		self.paramValue = []
+		for i in range(len(self.paramList[1])):
+			h = QtGui.QSplitter(QtCore.Qt.Horizontal)
+			font = QtGui.QFont()
+			font.setPixelSize(25)
+			txt = QtGui.QLabel(self)
+			txt.setText(self.paramList[1][i] + " = ")
+			txt.setFont(font)
+			edit = QtGui.QLineEdit(self)
+			edit.setFont(font)
+			if i == len(self.paramList[1])-1:
 				edit.setText(param[i+1][:-1])
 			else:
 				edit.setText(param[i+1])
@@ -607,7 +736,313 @@ class BlockEditor(QtGui.QDialog):
 		self.close()		
 
 	def initIfElse(self):
-		return
+		vbox = QtGui.QVBoxLayout()
+		btn = QtGui.QButtonGroup(self)
+
+		caution = QtGui.QLabel("If-Else Block is not recommended for beginners.\nPlease use Read Sensor or Read Motor Encoder Block instead.\nWhen using If-Else Block,\ndon't forget to put if block before elif and else!")
+
+		h1 = QtGui.QHBoxLayout()
+		ifCheck = QtGui.QCheckBox("if ",self)
+		ifStatement = QtGui.QLineEdit()
+		if self.text.find("if ") == 0:
+			ifCheck.setChecked(True)
+			ifStatement.setText(self.text[3:])
+		h1.addWidget(ifCheck)
+		h1.addWidget(ifStatement)
+
+		h2 = QtGui.QHBoxLayout()
+		elifCheck = QtGui.QCheckBox("elif ",self)
+		elifStatement = QtGui.QLineEdit()
+		if self.text.find("elif ") == 0:
+			elifCheck.setChecked(True)
+			elifStatement.setText(self.text[5:])
+		h2.addWidget(elifCheck)
+		h2.addWidget(elifStatement)
+
+		elseCheck = QtGui.QCheckBox("else:",self)
+		if self.text.find("else:") == 0:
+			elseCheck.setChecked(True)
+
+		btn.addButton(ifCheck)
+		btn.addButton(elifCheck)
+		btn.addButton(elseCheck)
+		self.ifElseCheck = [ifCheck,elifCheck,elseCheck]
+		self.ifElseStatement = [ifStatement,elifStatement]
+
+		vbox.addWidget(caution)
+		vbox.addLayout(h1)
+		vbox.addLayout(h2)
+		vbox.addWidget(elseCheck)
+
+		okButton = QtGui.QPushButton("OK",self)
+		okButton.clicked.connect(self.setIfElse)
+		vbox.addWidget(okButton)
+
+		self.setLayout(vbox)
+
+	def setIfElse(self):
+		if self.ifElseCheck == None or self.ifElseStatement == None:
+			return
+		ifElse = ["if ","elif ","else:"]
+		isExecuted = False
+		if self.ifElseCheck[2].checkState():
+			self.item.setWhatsThis("else:")
+			refreshCode(self.parent)
+			self.close()
+			return
+		for i in range(2):
+			if self.ifElseCheck[i].checkState():
+				isExecuted = True
+				if str(self.ifElseStatement[i].text()).strip() == "":
+					reply = QtGui.QMessageBox.information(self, 'Message',"Please type in something", QtGui.QMessageBox.Ok, QtGui.QMessageBox.Ok)
+					if reply == QtGui.QMessageBox.Ok:
+						return
+				txt = ifElse[i] + str(self.ifElseStatement[i].text())
+				if not txt[-1:] == ":":
+					txt = txt + ":"
+				self.item.setWhatsThis(txt)
+		if not isExecuted:
+			return
+		else:
+			refreshCode(self.parent)
+			self.close()
+
+	def initReadSensor(self):
+		self.availableReadSensorNames = ["Front Right Infrared Sensor","Front Left Infrared Sensor","Side Right Inrared Sensor","Side Left Infrared Sensor","UltraSound"]
+		self.availableReadSensor = ["IFR","IFL","ISR","ISL","US"]
+		vbox = QtGui.QVBoxLayout()
+		self.readSensor = []
+		
+		ifOrWhile = QtGui.QButtonGroup(self)
+		ifCheck = QtGui.QCheckBox("Execute only once",self)
+		whileCheck = QtGui.QCheckBox("Repeat",self)
+		ifOrWhile.addButton(ifCheck)
+		ifOrWhile.addButton(whileCheck)
+		self.readSensor.append(ifCheck)
+		self.readSensor.append(whileCheck)
+		vbox.addWidget(ifCheck)
+		vbox.addWidget(whileCheck)
+		if self.text.find("if ")==0:
+			ifCheck.setChecked(True)
+		elif self.text.find("while ")==0:
+			whileCheck.setChecked(True)
+
+		chooseSensor = QtGui.QLabel("Choose Sensor",self)
+		vbox.addWidget(chooseSensor)
+		self.selectReadSensor = QtGui.QComboBox(self)
+		for i in range(len(self.availableReadSensorNames)):
+			self.selectReadSensor.addItem(self.availableReadSensorNames[i])
+			if not self.text.find(self.availableReadSensor[i])==-1:
+				self.selectReadSensor.setCurrentIndex(i)
+		vbox.addWidget(self.selectReadSensor)
+
+		nearOrFar = QtGui.QButtonGroup(self)
+		h1 = QtGui.QHBoxLayout()
+		nearCheck = QtGui.QCheckBox("Nearer than ",self)
+		self.readSensorNearer = QtGui.QLineEdit(self)
+		unit = QtGui.QLabel("cm (approximately)",self)
+		h1.addWidget(nearCheck)
+		h1.addWidget(self.readSensorNearer)
+		h1.addWidget(unit)
+		vbox.addLayout(h1)
+		h2 = QtGui.QHBoxLayout()
+		farCheck = QtGui.QCheckBox("Further than ",self)
+		self.readSensorFurther = QtGui.QLineEdit(self)
+		unit2 = QtGui.QLabel("cm (approximately)",self)
+		h2.addWidget(farCheck)
+		h2.addWidget(self.readSensorFurther)
+		h2.addWidget(unit2)
+		vbox.addLayout(h2)
+		nearOrFar.addButton(nearCheck)
+		nearOrFar.addButton(farCheck)
+		if not self.text.find("<")==-1:
+			nearCheck.setChecked(True)
+			self.readSensorNearer.setText(self.text[self.text.index("<")+1:self.text.index(":")])
+		elif not self.text.find(">")==-1:
+			farCheck.setChecked(True)
+			self.readSensorFurther.setText(self.text[self.text.index(">")+1:self.text.index(":")])
+		self.readSensor.append(nearCheck)
+		self.readSensor.append(farCheck)
+
+		okButton = QtGui.QPushButton("Ok",self)
+		okButton.clicked.connect(self.setReadSensor)
+		vbox.addWidget(okButton)
+
+		self.setLayout(vbox)
+
+	def setReadSensor(self):
+		if self.readSensor == None:
+			return
+		txt = ""
+		if self.readSensor[0].checkState():
+			txt = "if readSensor(s,\""
+		elif self.readSensor[1].checkState():
+			txt = "while readSensor(s,\""
+		else:
+			return
+		txt = txt + self.availableReadSensor[self.selectReadSensor.currentIndex()]
+		if self.readSensor[2].checkState():
+			val = str(self.readSensorNearer.text()).strip()
+			if not val.isdigit():
+				reply = QtGui.QMessageBox.information(self, 'Message',"Please type in natural number value", QtGui.QMessageBox.Ok, QtGui.QMessageBox.Ok)
+				if reply == QtGui.QMessageBox.Ok:
+					return
+			txt = txt + "\")<" + val
+		elif self.readSensor[3].checkState():
+			val = str(self.readSensorFurther.text()).strip()
+			if not val.isdigit():
+				reply = QtGui.QMessageBox.information(self, 'Message',"Please type in natural number value", QtGui.QMessageBox.Ok, QtGui.QMessageBox.Ok)
+				if reply == QtGui.QMessageBox.Ok:
+					return
+			txt = txt + "\")>" + val
+		else:
+			return
+		txt = txt + ": #Read Sensor"
+		
+		self.item.setWhatsThis(txt)
+		refreshCode(self.parent)
+		self.close()
+
+	def initSetSensor(self):
+		self.availableSetSensorNames = ["Front Right Infrared Sensor","Front Left Infrared Sensor"]
+		self.availableSetSensor = ["R","L"]
+		vbox = QtGui.QVBoxLayout()
+
+		chooseSensor = QtGui.QLabel("Choose Sensor",self)
+		vbox.addWidget(chooseSensor)
+		self.selectSetSensor = QtGui.QComboBox(self)
+		for i in range(len(self.availableSetSensorNames)):
+			self.selectSetSensor.addItem(self.availableSetSensorNames[i])
+			if not self.text.find(self.availableSetSensor[i])==-1:
+				self.selectSetSensor.setCurrentIndex(i)
+		vbox.addWidget(self.selectSetSensor)
+
+		setSensorValue = QtGui.QLabel("Set Sensor Value (e.g. -45)",self)
+		vbox.addWidget(setSensorValue)
+
+		self.setSensor = QtGui.QLineEdit(self)
+		vbox.addWidget(self.setSensor)
+		self.setSensor.setText(self.text[self.text.index("\",")+2:self.text.index(")")])
+
+		okButton = QtGui.QPushButton("Ok",self)
+		okButton.clicked.connect(self.setSetSensor)
+		vbox.addWidget(okButton)
+
+		self.setLayout(vbox)
+
+	def setSetSensor(self):
+		if self.setSensor == None:
+			return
+		val = str(self.setSensor.text()).strip()
+		if val == "":
+			reply = QtGui.QMessageBox.information(self, 'Message',"Please type in value", QtGui.QMessageBox.Ok, QtGui.QMessageBox.Ok)
+			if reply == QtGui.QMessageBox.Ok:
+				return
+		txt = "setSensor(s,\"" + self.availableSetSensor[self.selectSetSensor.currentIndex()] + "\"," + val + ")"
+
+		self.item.setWhatsThis(txt)
+		refreshCode(self.parent)
+		self.close()
+
+	def initMotorEncoder(self):
+		self.availableMotorEncoderNames = ["Average of the two motor encoders","Right motor encoder","Left motor encoder"]
+		self.availableMotorEncoder = ["MELR","MER","MEL"]
+		vbox = QtGui.QVBoxLayout()
+		self.motorEncoder = []
+		
+		ifOrWhile = QtGui.QButtonGroup(self)
+		ifCheck = QtGui.QCheckBox("Execute only once",self)
+		whileCheck = QtGui.QCheckBox("Repeat",self)
+		ifOrWhile.addButton(ifCheck)
+		ifOrWhile.addButton(whileCheck)
+		self.motorEncoder.append(ifCheck)
+		self.motorEncoder.append(whileCheck)
+		vbox.addWidget(ifCheck)
+		vbox.addWidget(whileCheck)
+		if self.text.find("if ")==0:
+			ifCheck.setChecked(True)
+		elif self.text.find("while ")==0:
+			whileCheck.setChecked(True)
+
+		chooseMotor = QtGui.QLabel("Choose Motor Encoder",self)
+		vbox.addWidget(chooseMotor)
+		self.selectMotorEncoder = QtGui.QComboBox(self)
+		for i in range(len(self.availableMotorEncoderNames)):
+			self.selectMotorEncoder.addItem(self.availableMotorEncoderNames[i])
+		if not self.text.find(self.availableMotorEncoder[0])==-1:
+			self.selectMotorEncoder.setCurrentIndex(0)
+		elif not self.text.find(self.availableMotorEncoder[1])==-1:
+			self.selectMotorEncoder.setCurrentIndex(1)
+		elif not self.text.find(self.availableMotorEncoder[2])==-1:
+			self.selectMotorEncoder.setCurrentIndex(2)
+		vbox.addWidget(self.selectMotorEncoder)
+
+		lessMore = QtGui.QButtonGroup(self)
+		h1 = QtGui.QHBoxLayout()
+		lessCheck = QtGui.QCheckBox("Less than ",self)
+		self.motorEncoderLessThan = QtGui.QLineEdit(self)
+		unit = QtGui.QLabel("encoder ticks",self)
+		h1.addWidget(lessCheck)
+		h1.addWidget(self.motorEncoderLessThan)
+		h1.addWidget(unit)
+		vbox.addLayout(h1)
+		h2 = QtGui.QHBoxLayout()
+		moreCheck = QtGui.QCheckBox("More than ",self)
+		self.motorEncoderMoreThan = QtGui.QLineEdit(self)
+		unit2 = QtGui.QLabel("encoder ticks",self)
+		h2.addWidget(moreCheck)
+		h2.addWidget(self.motorEncoderMoreThan)
+		h2.addWidget(unit2)
+		vbox.addLayout(h2)
+		lessMore.addButton(lessCheck)
+		lessMore.addButton(moreCheck)
+		if not self.text.find("<")==-1:
+			lessCheck.setChecked(True)
+			self.motorEncoderLessThan.setText(self.text[self.text.index("<")+1:self.text.index(":")])
+		elif not self.text.find(">")==-1:
+			moreCheck.setChecked(True)
+			self.motorEncoderMoreThan.setText(self.text[self.text.index(">")+1:self.text.index(":")])
+		self.motorEncoder.append(lessCheck)
+		self.motorEncoder.append(moreCheck)
+
+		okButton = QtGui.QPushButton("Ok",self)
+		okButton.clicked.connect(self.setMotorEncoder)
+		vbox.addWidget(okButton)
+
+		self.setLayout(vbox)
+
+	def setMotorEncoder(self):
+		if self.motorEncoder == None:
+			return
+		txt = ""
+		if self.motorEncoder[0].checkState():
+			txt = "if readMotorEncoder(s,\""
+		elif self.motorEncoder[1].checkState():
+			txt = "while readMotorEncoder(s,\""
+		else:
+			return
+		txt = txt + self.availableMotorEncoder[self.selectMotorEncoder.currentIndex()]
+		if self.motorEncoder[2].checkState():
+			val = str(self.motorEncoderLessThan.text()).strip()
+			if val == "":
+				reply = QtGui.QMessageBox.information(self, 'Message',"Please type in value", QtGui.QMessageBox.Ok, QtGui.QMessageBox.Ok)
+				if reply == QtGui.QMessageBox.Ok:
+					return
+			txt = txt + "\")<" + val
+		elif self.motorEncoder[3].checkState():
+			val = str(self.motorEncoderMoreThan.text()).strip()
+			if val == "":
+				reply = QtGui.QMessageBox.information(self, 'Message',"Please type in value", QtGui.QMessageBox.Ok, QtGui.QMessageBox.Ok)
+				if reply == QtGui.QMessageBox.Ok:
+					return
+			txt = txt + "\")>" + val
+		else:
+			return
+		txt = txt + ": #Read Motor Encoder"
+		
+		self.item.setWhatsThis(txt)
+		refreshCode(self.parent)
+		self.close()
 
 	def initEdit(self):
 		vbox = QtGui.QVBoxLayout()
@@ -655,10 +1090,10 @@ class BlockEditor(QtGui.QDialog):
 		values = []
 		for i in range(len(self.paramValue)):
 			txt = str(self.paramValue[i].text()).strip()
-			if not txt.isdigit():
+			commentout = """if not txt.isdigit():
 				reply = QtGui.QMessageBox.information(self, 'Message',"Please type in natural number value", QtGui.QMessageBox.Ok, QtGui.QMessageBox.Ok)
 				if reply == QtGui.QMessageBox.Ok:
-					return
+					return"""
 			values.append(txt)
 
 		text = self.text[:self.index]

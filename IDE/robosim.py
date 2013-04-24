@@ -12,19 +12,24 @@ def reset(socket):
 	socket.send(msg)
 	socket.recv(80)
 
-def readSensor(socket,value,isLessThan):
-	msg = "S IFL\n"
+def readSensor(socket,whichSensor):
+	msg = "S " + whichSensor + "\n"
 	socket.send(msg)
-	sensorValue = int(socket.recv(80)[6:])
+	sensorValue = int(socket.recv(80)[3+len(whichSensor):])
+
+	if whichSensor == "US":
+		return sensorValue / 58
+
 	if sensorValue > 5:
 		sensorValue = (6787/(sensorValue-3))-4
 	else:
 		sensorValue = 200
-	if isLessThan:
-		return sensorValue < value
-	else:
-		return sensorValue > value
-	
+	return sensorValue
+
+def setSensor(socket,whichSensor,val):
+	msg = "I " + whichSensor + " " + str(val) + "\n"
+	socket.send(msg)
+	socket.recv(80)
 	
 def moveForward(socket,speed,dist):
 	if(dist<0):
@@ -39,6 +44,23 @@ def moveForward(socket,speed,dist):
 		socket.send(msg)
 		test = socket.recv(80)
 		t = abs(int(test[6:]))
+
+def setMotor(socket,leftMotor,rightMotor):
+	msg = "M LR " + str(leftMotor) + " " + str(rightMotor) + "\n"
+	socket.send(msg)
+	socket.recv(80)
+
+def readMotorEncoder(socket,whichMotor):
+	msg = "M " + whichMotor + "\n"
+	socket.send(msg)
+	val = socket.recv(80)
+	ls = val.split()
+	value = 0
+	if whichMotor == "MELR":
+		value = (int(ls[2]) + int(ls[3])) / 2
+	else:
+		value = int(ls[2])
+	return value
 
 def flashLED():
 	#not implemented anything
