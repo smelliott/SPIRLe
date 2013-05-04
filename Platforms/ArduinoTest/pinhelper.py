@@ -1,5 +1,5 @@
 import time
-#import pin setting library
+#import pin setting library (comment out due to dependencies)
 
 HIGH = 1
 LOW = 0

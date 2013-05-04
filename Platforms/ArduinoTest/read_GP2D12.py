@@ -1,6 +1,6 @@
 import time, conversions
 from pinhelper import *
-#import pin setting library
+#import pin setting library (comment out due to dependencies)
 
 # Takes pinId and address.
 # Returns distance in cm detected by the GP2D12 infrared rangefinder.
@@ -12,7 +12,8 @@ def do(pinId, address):
 	
 	# read and convert
 	# assume get_analog_pin handles A\D
-#	result = conversions.convert_cm_GP2D12(lib.get_analog_pin(pinId, address))
+# voltage = lib.get_analog_pin(pinId, address)
+#	result = conversions.convert_cm_GP2D12(voltage)
 	result = 0
 	
 	# enforce cycle period

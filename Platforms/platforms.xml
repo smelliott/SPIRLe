@@ -2,6 +2,6 @@
 	<name>ArduinoTest</name>
 	<instructions>
 		<instruction id="read_HCSR04" />
-		<instruciton id="read_GP2D12" />
+		<instruction id="read_GP2D12" />
 	</instructions>
 </platform>

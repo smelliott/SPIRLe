@@ -1,6 +1,6 @@
 import time, conversions
 from pinhelper import * 
-#import pin setting library
+#import pin setting library (comment out due to dependencies)
 
 # Takes trigger and echo pins.
 # Returns distance in cm detected by ultrasonic rangefinder.
