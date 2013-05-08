@@ -1,4 +1,4 @@
-SPIRLe -> Device
+SPIRLe > Device
 ======
 
 All kinds of goodies in varying stages of completion.

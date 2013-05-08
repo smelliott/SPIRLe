@@ -1,4 +1,4 @@
-SPIRLe -> IDE
+SPIRLe > IDE
 ======
 
 IDE!

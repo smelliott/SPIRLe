@@ -1,4 +1,4 @@
-SPIRLe -> Host
+SPIRLe > Host
 ======
 
 Host-side communications code.

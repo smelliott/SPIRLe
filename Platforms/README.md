@@ -1,4 +1,4 @@
-SPIRLe -> Platforms
+SPIRLe > Platforms
 ======
 
 ...
