@@ -6,13 +6,13 @@ using Microsoft.SPOT.Hardware;
 namespace SPIRLe {
 
 	public interface ICommProvider {
-		bool write(string s);
-		string read(int len);
-		bool open();
-		bool close();
-		int available();
-		bool poll_read(int timeout);
-		bool poll_write(int timeout);
+		public bool write(string s);
+		public string read(int len);
+		public bool open();
+		public bool close();
+		public int available();
+		public bool poll_read(int timeout);
+		public bool poll_write(int timeout);
 	}
 
 }
