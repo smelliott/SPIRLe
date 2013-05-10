@@ -1,4 +1,2 @@
 SPIRLe > Platforms
 ======
-
-...

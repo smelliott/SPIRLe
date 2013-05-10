@@ -15,6 +15,6 @@ The implementations
 -------------------
 - Arduino - canonical implementation. almost complete.
 - Contiki - extremely early draft, playing around mostly.
-- Gadgeteer - abandoned but still almost complete.
+- Gadgeteer - abandoned but still not far off completion.
 - Generic (Native) - the song that remains the same almost regardless of platform.
 - RaspberryPi - like Contiki, a play around.
