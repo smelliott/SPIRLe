@@ -1,7 +1,7 @@
 SPIRLe > IDE
 ======
 
-IDE!
+Code and required additional files for various components of the front-end IDE (Integrated Development Environment) interface.IDE!
 
 Platforms
 ---------
