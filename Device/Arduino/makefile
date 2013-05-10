@@ -20,7 +20,10 @@ OBJCPY_HEXOPTS=-O ihex -R .eeprom
 AVRD_OPTS=-C$(AVRD_CONF) -p$(MMU) -carduino -P$(SERIALPORT) -b$(BAUDRATE) -D -Uflash:w:./$(CODENAME).hex:i
 
 build:
-	#avr-g++ $(GPP_OPTS) -ointerface.o ./interface.cpp
+	avr-g++ $(GPP_OPTS) -oFakeStream.o ./utility/FakeStream.cpp
+	avr-g++ $(GPP_OPTS) -oSerialReporter.o ./utility/SerialReporter.cpp
+	avr-g++ $(GPP_OPTS) -oSuiteAppender.o ./utility/SuiteAppender.cpp
+	avr-g++ $(GPP_OPTS) -oTestSuite.o ./utility/TestSuite.cpp
 	avr-g++ $(GPP_OPTS) -ostring.o string.cpp
 	avr-g++ $(GPP_OPTS) -ohardserial.o hardserial.cpp
 	avr-g++ $(GPP_OPTS) -o$(CODENAME).o $(CODENAME).cpp
@@ -58,7 +61,7 @@ build:
 	avr-ar rcs ./core.a ./USBCore.o
 	avr-ar rcs ./core.a ./WString.o
 	avr-ar rcs ./core.a ./WMath.o
-	avr-gcc $(GCC_LINKOPTS) -o$(CODENAME).elf $(CODENAME).o string.o hardserial.o core.a
+	avr-gcc $(GCC_LINKOPTS) -o$(CODENAME).elf $(CODENAME).o string.o hardserial.o FakeStream.o SerialReporter.o SuiteAppender.o TestSuite.o core.a
 	avr-objcopy $(OBJCPY_EEPOPTS) $(CODENAME).elf $(CODENAME).eep
 	avr-objcopy $(OBJCPY_HEXOPTS) $(CODENAME).elf $(CODENAME).hex
 	avrdude $(AVRD_OPTS)

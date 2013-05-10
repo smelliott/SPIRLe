@@ -63,12 +63,12 @@ namespace SPIRLe {
 
 	bool HardwareSerialCommProvider::poll_read(int timeout) {
 		//have to implement own timeout on arduino
-		clock_t end = ms() + timeout;
-		while(ms() < end) {
-			if(available() > 0) {
-				return true;
-			}
-		}
+		// clock_t end = ms() + timeout;
+		// while(ms() < end) {
+		// 	if(available() > 0) {
+		// 		return true;
+		// 	}
+		// }
 		return false;
 	}
 

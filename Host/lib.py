@@ -8,7 +8,7 @@ class Comm:
 
 	def __init__(self):
 		self.s = None
-		self.type = ""
+		self.type = "SERIAL"
 		return
 
 	def setup_serial(self, serial_port, baud_rate, timeout):
@@ -127,38 +127,50 @@ class Comm:
 		# inst  | address               | hw id (SPI #)          |length | payload
 		# ------ ----------------------- ------------------------ ------- ------------
 		#
-		out = struct.pack('!BIIBs', 6, address, hwId, len(data), data)
+		out = struct.pack('!BIIBs', 7, address, hwId, len(data), data)
 		write(out)
 		return
 
 	def read_SPI(self, hwId, length, address = 0):
-		out = struct.pack('!BII', 7, address, hwId)
+		out = struct.pack('!BII', 6, address, hwId)
 		write(out)
-		return 'hello'
+		return
 
 	def read_SPI(self, hwId, address = 0):
 		#as above but reads all available from given SPI
-		out = struct.pack('!BII', 7, address, hwId)
+		out = struct.pack('!BII', 6, address, hwId)
 		write(out)
-		return 'hi'
+		return
 
 	def write_I2C(self, hwId, data, address = 0):
+		out = struct.pack('!BII', 9, address, hwId)
+		write(out)
 		return
 
 	def read_I2C(self, hwId, length, address = 0):
-		return 'hello'
+		out = struct.pack('!BII', 8, address, hwId)
+		write(out)
+		return
 
 	def read_I2C(self, hwId, address = 0):
 		#as above but reads all available from given I2C
-		return 'hi'
+		out = struct.pack('!BII', 8, address, hwId)
+		write(out)
+		return
 
 	def write_UART(self, hwId, data, address = 0):
+		out = struct.pack('!BII', 11, address, hwId)
+		write(out)
 		return
 
 	def read_UART(self, hwId, length, address = 0):
-		return 'hello'
+		out = struct.pack('!BII', 12, address, hwId)
+		write(out)
+		return
 
 	def read_UART(self, hwId, address = 0):
 		#as above but reads all available from given UART
-		return 'hi'
+		out = struct.pack('!BII', 12, address, hwId)
+		write(out)
+		return
 
